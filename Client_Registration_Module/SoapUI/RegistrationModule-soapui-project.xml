@@ -1,0 +1,8 @@
+{
+	"mealsToRegister":
+				[
+					{ "id": "1001", "name": "Lõunasöök" },
+					{ "id": "1002", "name": "Lisaeine" },
+					{ "id": "1003", "name": "Hommikusöök järgmisel päeval" }
+				]
+}
