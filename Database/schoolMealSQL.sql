@@ -24,9 +24,24 @@ DROP TABLE Klass;
 DROP TABLE Soogikord;
 DROP TABLE Tootaja_seisundi_liik;
 DROP TABLE Klassi_seisundi_liik;
+
+DROP INDEX IF EXISTS IDX_tootaja_ametid_amet_ID
+DROP INDEX IF EXISTS IDX_tootaja_ametid_tootaja_ID
+DROP INDEX IF EXISTS IDX_tootaja_tootaja_seisundi_liik_kood
+DROP INDEX IF EXISTS IDX_opilase_soogikorrad_opilane_ID
+DROP INDEX IF EXISTS IDX_opilase_soogikorrad_soogikorra_ID
+DROP INDEX IF EXISTS IDX_opilane_opilase_seisundi_liik_kood
+DROP INDEX IF EXISTS IDX_opilane_klass_ID
+DROP INDEX IF EXISTS IDX_soogikord_soogikorra_seisundi_liik_kood
+DROP INDEX IF EXISTS IDX_soogikord_soogikorra_liik_kood
+DROP INDEX IF EXISTS IDX_soogikord_tootaja_ID
+DROP INDEX IF EXISTS IDX_klass_kooliaste_kood
+DROP INDEX IF EXISTS IDX_klass_klassi_seisundi_liik_kood
+DROP INDEX IF EXISTS IDX_klass_tootaja_ID
+
 CREATE TABLE Tootaja_ametid (
 	tootaja_amet_ID SERIAL NOT NULL,
-	tootaja_ID INTEGER NOT NULL,
+	tootaja_ID SMALLINT NOT NULL,
 	amet_ID SMALLINT NOT NULL,
 	CONSTRAINT PK_tootaja_ametid PRIMARY KEY (tootaja_amet_ID)
 	);
@@ -57,8 +72,8 @@ CREATE TABLE Soogikorra_liik (
 	);
 CREATE TABLE Opilase_soogikorrad (
 	opilase_soogikorra_ID SERIAL NOT NULL,
-	soogikorra_ID INTEGER NOT NULL,
-	opilane_ID INTEGER NOT NULL,
+	soogikorra_ID SMALLINT NOT NULL,
+	opilane_ID SMALLINT NOT NULL,
 	registreerimise_kuupaev DATE NOT NULL,
 	CONSTRAINT PK_opilase_soogikorrad PRIMARY KEY (opilase_soogikorra_ID)
 	);
@@ -73,14 +88,14 @@ CREATE TABLE Klass (
 	CONSTRAINT PK_klass PRIMARY KEY (klass_ID),
 	CONSTRAINT AK_klass_nimetus UNIQUE (nimetus)
 	);
-CREATE INDEX TC_Klass51 ON Klass (kooliaste_kood );
-CREATE INDEX TC_Klass52 ON Klass (klassi_seisundi_liik_kood );
-CREATE INDEX TC_Klass53 ON Klass (tootaja_ID );
+CREATE INDEX IDX_klass_kooliaste_kood ON Klass (kooliaste_kood );
+CREATE INDEX IDX_klass_klassi_seisundi_liik_kood ON Klass (klassi_seisundi_liik_kood );
+CREATE INDEX IDX_klass_tootaja_ID ON Klass (tootaja_ID );
 CREATE TABLE Opilane (
 	opilane_ID SERIAL NOT NULL,
 	UID INTEGER NOT NULL,
 	opilase_seisundi_liik_kood SMALLINT NOT NULL,
-	klass_ID INTEGER NOT NULL,
+	klass_ID SMALLINT NOT NULL,
 	CONSTRAINT TC_opilane_UID UNIQUE (UID),
 	CONSTRAINT PK_opilane PRIMARY KEY (opilane_ID)
 	);
@@ -128,7 +143,7 @@ CREATE INDEX IDX_soogikord_soogikorra_liik_kood ON Soogikord (soogikorra_liik_ko
 CREATE INDEX IDX_soogikord_tootaja_ID ON Soogikord (tootaja_ID );
 CREATE TABLE Opilase_seisundi_liik (
 	opilase_seisundi_liik_kood SMALLINT NOT NULL,
-	nimetus VARCHAR ( 1 ) NOT NULL,
+	nimetus VARCHAR ( 50 ) NOT NULL,
 	kirjeldus VARCHAR ( 200 ) NOT NULL,
 	CONSTRAINT AK_opilase_seisundi_liik UNIQUE (nimetus),
 	CONSTRAINT PK_opilase_seisundi_liik PRIMARY KEY (opilase_seisundi_liik_kood)
@@ -146,4 +161,3 @@ ALTER TABLE Klass ADD CONSTRAINT FK_klass_kooliaste_kood FOREIGN KEY (kooliaste_
 ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_tootaja_ID FOREIGN KEY (tootaja_ID) REFERENCES Tootaja (tootaja_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_seisundi_liik_kood FOREIGN KEY (soogikorra_seisundi_liik_kood) REFERENCES Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_liik_kood FOREIGN KEY (soogikorra_liik_kood) REFERENCES Soogikorra_liik (soogikorra_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-
