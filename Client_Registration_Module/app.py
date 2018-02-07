@@ -19,7 +19,7 @@ class TestApp(App):
 
     def build(self):
 
-        mealsToRegisterRequest = requests.get('http://127.0.0.1:8080/meals-to-register')
+        mealsToRegisterRequest = requests.get('http://127.0.0.1:5000/meals-to-register')
         if mealsToRegisterRequest.status_code != 200:
             # This means something went wrong.
             raise ApiError('GET /tasks/ {}'.format(mealsToRegisterRequest.status_code))

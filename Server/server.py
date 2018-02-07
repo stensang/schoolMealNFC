@@ -1,9 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
 #App to debug mode - website changes with refresh
 app.debug = True
+app.config['JSON_AS_ASCII'] = False
 
 @app.route('/', methods=['GET'])
 def test():
@@ -20,6 +24,17 @@ def test2():
 @app.route('/additional-meals', methods=['GET'])
 def test3():
     return jsonify({'message' : 'additional-meals!'})
+
+@app.route('/meals-to-register', methods=['GET'])
+def test4():
+    return jsonify({
+	"mealsToRegister":
+				[
+					{ "id": "2", "name": "Lõunasöök" },
+					{ "id": "3", "name": "Lisaeine" },
+					{ "id": "1", "name": "Hommikusöök järgmisel päeval" }
+				]
+                })
 
 if __name__ == '__main__':
     app.run()
