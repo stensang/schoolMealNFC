@@ -11,19 +11,6 @@ ALTER TABLE Klass DROP CONSTRAINT FK_klass_kooliaste_kood;
 ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_tootaja_ID;
 ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_soogikorra_seisundi_liik_kood;
 ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_soogikorra_liik_kood;
-DROP TABLE Soogikorra_liik;
-DROP TABLE Opilane;
-DROP TABLE Kooliaste;
-DROP TABLE Opilase_seisundi_liik;
-DROP TABLE Opilase_soogikorrad;
-DROP TABLE Amet;
-DROP TABLE Soogikorra_seisundi_liik;
-DROP TABLE Tootaja_ametid;
-DROP TABLE Tootaja;
-DROP TABLE Klass;
-DROP TABLE Soogikord;
-DROP TABLE Tootaja_seisundi_liik;
-DROP TABLE Klassi_seisundi_liik;
 
 DROP INDEX IF EXISTS IDX_tootaja_ametid_amet_ID
 DROP INDEX IF EXISTS IDX_tootaja_ametid_tootaja_ID
@@ -39,20 +26,26 @@ DROP INDEX IF EXISTS IDX_klass_kooliaste_kood
 DROP INDEX IF EXISTS IDX_klass_klassi_seisundi_liik_kood
 DROP INDEX IF EXISTS IDX_klass_tootaja_ID
 
-CREATE TABLE Tootaja_ametid (
-	tootaja_amet_ID SERIAL NOT NULL,
-	tootaja_ID SMALLINT NOT NULL,
-	amet_ID SMALLINT NOT NULL,
-	CONSTRAINT PK_tootaja_ametid PRIMARY KEY (tootaja_amet_ID)
-	);
-CREATE INDEX IDX_tootaja_ametid_amet_ID ON Tootaja_ametid (amet_ID );
-CREATE INDEX IDX_tootaja_ametid_tootaja_ID ON Tootaja_ametid (tootaja_ID );
+DROP TABLE IF EXISTS Soogikorra_liik;
+DROP TABLE IF EXISTS Opilane;
+DROP TABLE IF EXISTS Kooliaste;
+DROP TABLE IF EXISTS Opilase_seisundi_liik;
+DROP TABLE IF EXISTS Opilase_soogikorrad;
+DROP TABLE IF EXISTS Amet;
+DROP TABLE IF EXISTS Soogikorra_seisundi_liik;
+DROP TABLE IF EXISTS Tootaja_ametid;
+DROP TABLE IF EXISTS Tootaja;
+DROP TABLE IF EXISTS Klass;
+DROP TABLE IF EXISTS Soogikord;
+DROP TABLE IF EXISTS Tootaja_seisundi_liik;
+DROP TABLE IF EXISTS Klassi_seisundi_liik;
+
 CREATE TABLE Tootaja (
 	tootaja_ID SERIAL NOT NULL,
-	e-post VARCHAR ( 255 ) NOT NULL,
+	epost VARCHAR ( 255 ) NOT NULL,
 	parool VARCHAR ( 255 ) NOT NULL,
 	tootaja_seisundi_liik_kood SMALLINT NOT NULL,
-	CONSTRAINT AK_tootaja_e-post UNIQUE (e-post),
+	CONSTRAINT AK_tootaja_epost UNIQUE (epost),
 	CONSTRAINT PK_tootaja PRIMARY KEY (tootaja_ID)
 	);
 CREATE INDEX IDX_tootaja_tootaja_seisundi_liik_kood ON Tootaja (tootaja_seisundi_liik_kood );
@@ -148,6 +141,15 @@ CREATE TABLE Opilase_seisundi_liik (
 	CONSTRAINT AK_opilase_seisundi_liik UNIQUE (nimetus),
 	CONSTRAINT PK_opilase_seisundi_liik PRIMARY KEY (opilase_seisundi_liik_kood)
 	);
+CREATE TABLE Tootaja_ametid (
+	tootaja_amet_ID SERIAL NOT NULL,
+	tootaja_ID SMALLINT NOT NULL,
+	amet_ID SMALLINT NOT NULL,
+	CONSTRAINT PK_tootaja_ametid PRIMARY KEY (tootaja_amet_ID)
+	);
+CREATE INDEX IDX_tootaja_ametid_amet_ID ON Tootaja_ametid (amet_ID );
+CREATE INDEX IDX_tootaja_ametid_tootaja_ID ON Tootaja_ametid (tootaja_ID );
+
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_klass_ID FOREIGN KEY (klass_ID) REFERENCES Klass (klass_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_opilase_seisundi_liik_kood FOREIGN KEY (opilase_seisundi_liik_kood) REFERENCES Opilase_seisundi_liik (opilase_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilase_soogikorrad ADD CONSTRAINT FK_opilase_soogikorrad_opilane_ID FOREIGN KEY (opilane_ID) REFERENCES Opilane (opilane_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
