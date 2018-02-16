@@ -189,3 +189,14 @@ INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VA
 
 INSERT INTO Tootaja (isikukood, eesnimi, perenimi, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'Eesnimi', 'Perenimi', 'eesnimi.perenimi@epost.ee', 'Trustno1', 1);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 1219);
+
+INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 1, '2018-02-16', 'Kirjeldus ...');
+INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 2, '2018-02-16', 'Kirjeldus ...');
+INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 3, '2018-02-16', 'Kirjeldus ...');
+
+CREATE MATERIALIZED VIEW Soogikorrad_registreerimisele_avatud AS
+SELECT Soogikord.soogikorra_id, Soogikorra_liik.nimetus
+FROM Soogikord
+JOIN Soogikorra_liik
+    ON Soogikord.soogikorra_liik_kood = Soogikorra_liik.soogikorra_liik_kood
+WHERE Soogikord.soogikorra_seisundi_liik_kood = 3;

@@ -34,8 +34,8 @@ class TestApp(App):
         Clock.schedule_interval(widgetClock1.update, 1)
         layoutDate.add_widget(widgetClock1)
 
-        for meal in mealsToRegister["mealsToRegister"]:
-            layoutButtons.add_widget(Button(text=meal['name']))
+        for meal in mealsToRegister:
+            layoutButtons.add_widget(Button(text=meal['nimetus']))
 
         # buttonLunch = Button(text="Lõunasöök")
         # buttonAdditional = Button(text="Lisaeine")
