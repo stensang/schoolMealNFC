@@ -3,17 +3,17 @@ ALTER TABLE Opilane DROP CONSTRAINT FK_opilane_opilase_seisundi_liik_kood;
 ALTER TABLE Opilase_soogikorrad DROP CONSTRAINT FK_opilase_soogikorrad_opilane_ID;
 ALTER TABLE Opilase_soogikorrad DROP CONSTRAINT FK_opilase_soogikorrad_soogikorra_ID;
 ALTER TABLE Tootaja_ametid DROP CONSTRAINT FK_tootaja_ametid_amet_kood;
-ALTER TABLE Tootaja_ametid DROP CONSTRAINT FK_tootaja_ametid_tootaja_ID;
+ALTER TABLE Tootaja_ametid DROP CONSTRAINT FK_tootaja_ametid_isikukood;
 ALTER TABLE Tootaja DROP CONSTRAINT FK_tootaja_tootaja_seisundi_liik_kood;
-ALTER TABLE Klass DROP CONSTRAINT FK_klass_tootaja_ID;
+ALTER TABLE Klass DROP CONSTRAINT FK_klass_isikukood;
 ALTER TABLE Klass DROP CONSTRAINT FK_klass_klassi_seisundi_liik_kood;
 ALTER TABLE Klass DROP CONSTRAINT FK_klass_kooliaste_kood;
-ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_tootaja_ID;
+ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_isikukood;
 ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_soogikorra_seisundi_liik_kood;
 ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_soogikorra_liik_kood;
 
 DROP INDEX IF EXISTS IDX_tootaja_ametid_amet_kood
-DROP INDEX IF EXISTS IDX_tootaja_ametid_tootaja_ID
+DROP INDEX IF EXISTS IDX_tootaja_ametid_isikukood
 DROP INDEX IF EXISTS IDX_tootaja_tootaja_seisundi_liik_kood
 DROP INDEX IF EXISTS IDX_opilase_soogikorrad_opilane_ID
 DROP INDEX IF EXISTS IDX_opilase_soogikorrad_soogikorra_ID
@@ -21,10 +21,10 @@ DROP INDEX IF EXISTS IDX_opilane_opilase_seisundi_liik_kood
 DROP INDEX IF EXISTS IDX_opilane_klass_ID
 DROP INDEX IF EXISTS IDX_soogikord_soogikorra_seisundi_liik_kood
 DROP INDEX IF EXISTS IDX_soogikord_soogikorra_liik_kood
-DROP INDEX IF EXISTS IDX_soogikord_tootaja_ID
+DROP INDEX IF EXISTS IDX_soogikord_isikukood
 DROP INDEX IF EXISTS IDX_klass_kooliaste_kood
 DROP INDEX IF EXISTS IDX_klass_klassi_seisundi_liik_kood
-DROP INDEX IF EXISTS IDX_klass_tootaja_ID
+DROP INDEX IF EXISTS IDX_klass_isikukood
 
 DROP TABLE IF EXISTS Soogikorra_liik;
 DROP TABLE IF EXISTS Opilane;
@@ -41,12 +41,14 @@ DROP TABLE IF EXISTS Tootaja_seisundi_liik;
 DROP TABLE IF EXISTS Klassi_seisundi_liik;
 
 CREATE TABLE Tootaja (
-	tootaja_ID SERIAL NOT NULL,
+	isikukood VARCHAR ( 11 ) NOT NULL,
+	eesnimi VARCHAR ( 255 ) NOT NULL,
+	perenimi VARCHAR ( 255 ) NOT NULL,
 	epost VARCHAR ( 255 ) NOT NULL,
 	parool VARCHAR ( 255 ) NOT NULL,
 	tootaja_seisundi_liik_kood SMALLINT NOT NULL,
 	CONSTRAINT AK_tootaja_epost UNIQUE (epost),
-	CONSTRAINT PK_tootaja PRIMARY KEY (tootaja_ID)
+	CONSTRAINT PK_tootaja PRIMARY KEY (isikukood)
 	);
 CREATE INDEX IDX_tootaja_tootaja_seisundi_liik_kood ON Tootaja (tootaja_seisundi_liik_kood );
 CREATE TABLE Tootaja_seisundi_liik (
@@ -75,7 +77,7 @@ CREATE INDEX IDX_opilase_soogikorrad_soogikorra_ID ON Opilase_soogikorrad (soogi
 CREATE TABLE Klass (
 	klass_ID SERIAL NOT NULL,
 	nimetus VARCHAR ( 50 ) NOT NULL,
-	tootaja_ID INTEGER NOT NULL,
+	isikukood VARCHAR ( 11 ) NOT NULL,
 	kooliaste_kood SMALLINT NOT NULL,
 	klassi_seisundi_liik_kood SMALLINT NOT NULL,
 	CONSTRAINT PK_klass PRIMARY KEY (klass_ID),
@@ -83,7 +85,7 @@ CREATE TABLE Klass (
 	);
 CREATE INDEX IDX_klass_kooliaste_kood ON Klass (kooliaste_kood );
 CREATE INDEX IDX_klass_klassi_seisundi_liik_kood ON Klass (klassi_seisundi_liik_kood );
-CREATE INDEX IDX_klass_tootaja_ID ON Klass (tootaja_ID );
+CREATE INDEX IDX_klass_isikukood ON Klass (isikukood );
 CREATE TABLE Opilane (
 	opilane_ID SERIAL NOT NULL,
 	UID INTEGER NOT NULL,
@@ -124,7 +126,7 @@ CREATE TABLE Amet (
 	);
 CREATE TABLE Soogikord (
 	soogikorra_ID SERIAL NOT NULL,
-	tootaja_ID INTEGER NOT NULL,
+	isikukood VARCHAR ( 11 ) NOT NULL,
 	soogikorra_seisundi_liik_kood SMALLINT NOT NULL,
 	soogikorra_liik_kood SMALLINT NOT NULL,
 	kuupaev DATE NOT NULL,
@@ -133,7 +135,7 @@ CREATE TABLE Soogikord (
 	);
 CREATE INDEX IDX_soogikord_soogikorra_seisundi_liik_kood ON Soogikord (soogikorra_seisundi_liik_kood );
 CREATE INDEX IDX_soogikord_soogikorra_liik_kood ON Soogikord (soogikorra_liik_kood );
-CREATE INDEX IDX_soogikord_tootaja_ID ON Soogikord (tootaja_ID );
+CREATE INDEX IDX_soogikord_isikukood ON Soogikord (isikukood );
 CREATE TABLE Opilase_seisundi_liik (
 	opilase_seisundi_liik_kood SMALLINT NOT NULL,
 	nimetus VARCHAR ( 50 ) NOT NULL,
@@ -143,24 +145,24 @@ CREATE TABLE Opilase_seisundi_liik (
 	);
 CREATE TABLE Tootaja_ametid (
 	tootaja_amet_kood SERIAL NOT NULL,
-	tootaja_ID SMALLINT NOT NULL,
+	isikukood VARCHAR ( 11 ) NOT NULL,
 	amet_kood SMALLINT NOT NULL,
 	CONSTRAINT PK_tootaja_ametid PRIMARY KEY (tootaja_amet_kood)
 	);
 CREATE INDEX IDX_tootaja_ametid_amet_kood ON Tootaja_ametid (amet_kood );
-CREATE INDEX IDX_tootaja_ametid_tootaja_ID ON Tootaja_ametid (tootaja_ID );
+CREATE INDEX IDX_tootaja_ametid_isikukood ON Tootaja_ametid (isikukood );
 
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_klass_ID FOREIGN KEY (klass_ID) REFERENCES Klass (klass_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_opilase_seisundi_liik_kood FOREIGN KEY (opilase_seisundi_liik_kood) REFERENCES Opilase_seisundi_liik (opilase_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilase_soogikorrad ADD CONSTRAINT FK_opilase_soogikorrad_opilane_ID FOREIGN KEY (opilane_ID) REFERENCES Opilane (opilane_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilase_soogikorrad ADD CONSTRAINT FK_opilase_soogikorrad_soogikorra_ID FOREIGN KEY (soogikorra_ID) REFERENCES Soogikord (soogikorra_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_amet_kood FOREIGN KEY (amet_kood) REFERENCES Amet (amet_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_tootaja_ID FOREIGN KEY (tootaja_ID) REFERENCES Tootaja (tootaja_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_tootaja_seisundi_liik_kood FOREIGN KEY (tootaja_seisundi_liik_kood) REFERENCES Tootaja_seisundi_liik (tootaja_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Klass ADD CONSTRAINT FK_klass_tootaja_ID FOREIGN KEY (tootaja_ID) REFERENCES Tootaja (tootaja_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Klass ADD CONSTRAINT FK_klass_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Klass ADD CONSTRAINT FK_klass_klassi_seisundi_liik_kood FOREIGN KEY (klassi_seisundi_liik_kood) REFERENCES Klassi_seisundi_liik (klassi_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Klass ADD CONSTRAINT FK_klass_kooliaste_kood FOREIGN KEY (kooliaste_kood) REFERENCES Kooliaste (kooliaste_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_tootaja_ID FOREIGN KEY (tootaja_ID) REFERENCES Tootaja (tootaja_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_seisundi_liik_kood FOREIGN KEY (soogikorra_seisundi_liik_kood) REFERENCES Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_liik_kood FOREIGN KEY (soogikorra_liik_kood) REFERENCES Soogikorra_liik (soogikorra_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 
@@ -179,7 +181,11 @@ INSERT INTO Soogikorra_liik (soogikorra_liik_kood, nimetus) VALUES (1, 'Hommikus
 INSERT INTO Soogikorra_liik (soogikorra_liik_kood, nimetus) VALUES (2, 'Lõunasöök');
 INSERT INTO Soogikorra_liik (soogikorra_liik_kood, nimetus) VALUES (3, 'Lisaeine');
 
+INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (0, 'Arhiveeritud');
 INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (1, 'Koostamisel');
-INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (2, 'Avalikustatud');
-INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (3, 'Lõpetatud');
-INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (4, 'Arhiveeritud');
+INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (2, 'Kinnitatud');
+INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (3, 'Registreerimine avatud');
+INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (4, 'Registreerimine suletud');
+
+INSERT INTO Tootaja (isikukood, eesnimi, perenimi, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'Eesnimi', 'Perenimi', 'eesnimi.perenimi@epost.ee', 'Trustno1', 1);
+INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 1219);

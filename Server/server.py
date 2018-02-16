@@ -32,7 +32,7 @@ def test4():
 				[
 					{ "id": "2", "name": "Lõunasöök" },
 					{ "id": "3", "name": "Lisaeine" },
-					{ "id": "1", "name": "Hommikusöök järgmisel päeval" }
+					{ "id": "1", "name": "Hommikusöök" }
 				]
                 })
 
