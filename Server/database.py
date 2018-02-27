@@ -15,8 +15,11 @@ class PGDatabase():
         self.cursor = self.conn.cursor()
         print("Connected!\n")
 
-    def execute(self, query):
-        self.cursor.execute(query)
+    def execute(self, query, data):
+        self.cursor.execute(query, data)
+        print("Query executed!\n")
+
+    def getRecords(self):
         # "SELECT * FROM Soogikorrad_registreerimisele_avatud LIMIT 3"
         self.records = self.cursor.fetchall()
         self.records_list = []
@@ -28,7 +31,13 @@ class PGDatabase():
                 self.column +=1
             self.records_list.append(self.dictionary)
         return self.records_list
+        print("Records sended!\n")
+
+    def commit(self):
+        self.conn.commit()
+        print("Commited!\n")
 
     def close(self):
         self.cursor.close()
         self.conn.close()
+        print("Connection closed!\n")

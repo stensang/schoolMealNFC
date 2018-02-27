@@ -19,7 +19,7 @@ class widgetClock(Label):
 class mealsToRegister():
     # methods
     def get():
-        mealsToRegisterRequest = requests.get('http://127.0.0.1:5000/meals-to-register')
+        mealsToRegisterRequest = requests.get('http://127.0.0.1:5000/soogikorrad-registreerimisele-avatud')
         if mealsToRegisterRequest.status_code != 200:
             # This means something went wrong.
             raise ApiError('GET /tasks/ {}'.format(mealsToRegisterRequest.status_code))
@@ -48,14 +48,6 @@ class TestApp(App):
 
         for meal in meals:
             layoutButtons.add_widget(Button(text=meal['nimetus']))
-
-        # buttonLunch = Button(text="Lõunasöök")
-        # buttonAdditional = Button(text="Lisaeine")
-        # buttonBreakfast = Button(text="Hommikusöök")
-        #
-        # layoutButtons.add_widget(buttonLunch)
-        # layoutButtons.add_widget(buttonAdditional)
-        # layoutButtons.add_widget(buttonBreakfast)
 
         layout.add_widget(layoutDate)
         layout.add_widget(layoutButtons)

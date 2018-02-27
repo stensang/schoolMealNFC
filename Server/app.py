@@ -1,61 +1,67 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# http://flask.pocoo.org/
 from flask import Flask, request, jsonify
-from flask_restplus import Resource, Api
-from database import PGDatabase
+# http://flask-restplus.readthedocs.io/en/stable/
+from flask_restplus import Api, Resource, fields
+import datetime
 import sys
+from database import PGDatabase
 
-
+# Initialize
 app = Flask(__name__)
 api = Api(app)
 
-#App to debug mode - website changes with refresh
+# App to debug mode - website changes with refresh
 app.debug = True
-app.config['JSON_AS_ASCII'] = False
+# app.config['JSON_AS_ASCII'] = False
 
-@api.route('/hello')
-class Helloworld(Resource):
-    def get(self):
-        return {'hello':'world'}
+# Response marshalling
+avatudSoogikorrad = api.model('Registreerimiseks avatud söögikorrad', {
+    'soogikorra_id' : fields.Integer,
+})
+opilaseSoogikorrad = api.model('Õpilase söögikorrad', {
+    'opilase_id' : fields.Integer,
+    'soogikorrad' : fields.List(fields.Nested(avatudSoogikorrad)),
+})
 
 @api.route('/opilase-soogikorrad')
+# Inherit from Resource
 class OpilaseSoogikorrad(Resource):
-    def put(self):
-        opilase_soogikorrad = request.form['data']
-        return {soogikorra_ID: opilase_soogikorrad[soogikorra_ID]}
+    def get(self):
+        return {'This': 'Works'}
 
-@app.route('/', methods=['GET'])
-def test():
-    return jsonify({'message' : 'It works!'})
+    # Informatsiooni valideerimine
+    @api.expect(opilaseSoogikorrad, validate=True)
+    def post(self):
+        # Andmebaasi ühenduse avamine
+        db = PGDatabase()
+        # Andmete lugemine POST sõnumist
+        content = request.json
+        opilase_id = content['opilase_id']
+        soogikorrad = content['soogikorrad']
 
-@app.route('/breakfasts', methods=['GET'])
-def test1():
-    return jsonify({'message' : 'breakfasts'})
+        # Andmete sisestamine Andmebaasi
+        for soogikord in soogikorrad:
+            db.execute("""INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (%s, %s, %s);""",
+            (soogikord['soogikorra_id'], opilase_id, datetime.date.today() ))
 
-@app.route('/lunches', methods=['GET'])
-def test2():
-    return jsonify({'message' : 'lunches!'})
+        # Andmete kinnitamine
+        db.commit()
+        # Ühenduse sulgemine
+        db.close()
 
-@app.route('/additional-meals', methods=['GET'])
-def test3():
-    return jsonify({'message' : 'additional-meals!'})
 
-@api.route('/meals-to-register')
+@api.route('/soogikorrad-registreerimisele-avatud')
 class MealsToRegister(Resource):
     def get(self):
         db = PGDatabase()
-        mealstToRegisterData = db.execute("SELECT * FROM Soogikorrad_registreerimisele_avatud LIMIT 3")
+        db.execute("""SELECT * FROM Soogikorrad_registreerimisele_avatud LIMIT 3""", "")
+        mealstToRegisterData = db.getRecords()
         db.close()
-        return jsonify(mealstToRegisterData)
-
-    # {
-	# 			[
-	# 				{ "soogikorra_id": "2", "nimetus": "Lõunasöök" },
-	# 				{ "soogikorra_id": "3", "nimetus": "Lisaeine" },
-	# 				{ "soogikorra_id": "1", "nimetus": "Hommikusöök" }
-	# 			]
-    # }
+        # No need for jsonify, flask_restplus assumes you return jsonify
+        return mealstToRegisterData
 
 if __name__ == '__main__':
     app.run()

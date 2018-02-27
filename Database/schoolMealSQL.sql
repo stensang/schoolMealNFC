@@ -189,10 +189,21 @@ INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VA
 
 INSERT INTO Tootaja (isikukood, eesnimi, perenimi, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'Eesnimi', 'Perenimi', 'eesnimi.perenimi@epost.ee', 'Trustno1', 1);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 1219);
+INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 2341);
 
 INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 1, '2018-02-16', 'Kirjeldus ...');
 INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 2, '2018-02-16', 'Kirjeldus ...');
 INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 3, '2018-02-16', 'Kirjeldus ...');
+
+INSERT INTO Klassi_seisundi_liik (klassi_seisundi_liik_kood, nimetus) VALUES (0, 'lõpetanud');
+INSERT INTO Klassi_seisundi_liik (klassi_seisundi_liik_kood, nimetus) VALUES (1, 'aktiivne');
+
+INSERT INTO Klass (klass_ID, nimetus, isikukood, kooliaste_kood, klassi_seisundi_liik_kood) VALUES (1, '5. klass', '38001010014', 2, 1);
+
+INSERT INTO Opilase_seisundi_liik (opilase_seisundi_liik_kood, nimetus) VALUES (0, 'lõpetanud');
+INSERT INTO Opilase_seisundi_liik (opilase_seisundi_liik_kood, nimetus) VALUES (1, 'õpib');
+
+INSERT INTO Opilane (UID, opilase_seisundi_liik_kood, klass_ID) VALUES (1122334455, 1, 1);
 
 CREATE MATERIALIZED VIEW Soogikorrad_registreerimisele_avatud AS
 SELECT Soogikord.soogikorra_id, Soogikorra_liik.nimetus
