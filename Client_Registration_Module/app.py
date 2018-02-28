@@ -4,7 +4,7 @@
 import requests
 from kivy.app import App
 from kivy.uix.label import Label
-from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 import time
@@ -58,8 +58,20 @@ class registrationModule():
             uidSTR = ''.join(map(str, uid))
 
             # return UID
+            mr = mealsToRegister()
+
             return self.uidSTR
 
+class registration(Label):
+    def update(self):
+        self.rm = registrationModule()
+        self.uid = rm.getUID()
+        if self.uid is not None:
+            self.data = {'uid': uid, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
+            mealsToRegister1.post(data)
+            self.text = self.uid
+        else:
+            self.text = 'Vali soovitud toidukorrad ja aseta õpilaspilet lugerile.'
 
 
 class TestApp(App):
@@ -78,10 +90,11 @@ class TestApp(App):
         meals = mealsToRegister1.get()
 
         for meal in meals:
-            layoutButtons.add_widget(Button(text=meal['nimetus']))
+            layoutButtons.add_widget(ToggleButton(text=meal['nimetus']))
 
-        data = {'uid': '13213021943246', 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
-        mealsToRegister1.post(data)
+        reg = registration()
+        Clock.schedule_interval(reg.update, 0.5)
+        layoutDate.add_widget()
 
         layout.add_widget(layoutDate)
         layout.add_widget(layoutButtons)
