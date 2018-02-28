@@ -22,7 +22,7 @@ avatudSoogikorrad = api.model('Registreerimiseks avatud söögikorrad', {
     'soogikorra_id' : fields.Integer,
 })
 opilaseSoogikorrad = api.model('Õpilase söögikorrad', {
-    'opilase_id' : fields.Integer,
+    'uid' : fields.String,
     'soogikorrad' : fields.List(fields.Nested(avatudSoogikorrad)),
 })
 
@@ -35,12 +35,18 @@ class OpilaseSoogikorrad(Resource):
     # Informatsiooni valideerimine
     @api.expect(opilaseSoogikorrad, validate=True)
     def post(self):
-        # Andmebaasi ühenduse avamine
-        db = PGDatabase()
         # Andmete lugemine POST sõnumist
         content = request.json
-        opilase_id = content['opilase_id']
+        uid = content['uid']
         soogikorrad = content['soogikorrad']
+
+        # Andmebaasi ühenduse avamine
+        db = PGDatabase()
+        # Õpilase ID pärimine kasutades UID
+        db.execute("""SELECT opilane_ID FROM Opilane WHERE UID= %s ;""", (uid,))
+        records = db.getRecords()
+        # LISADA: Kontrolli, kas tagastatakse ID, kui ei, siis sellise UID-ga õpilast ei ole. Sulge ühendus.
+        opilase_id = records[0]['opilane_id']
 
         # Andmete sisestamine Andmebaasi
         for soogikord in soogikorrad:

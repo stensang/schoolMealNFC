@@ -8,27 +8,58 @@ from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 import time
-#import MFRC522
-#import RPi.GPIO as GPIO
-#import signal
+# import MFRC522
 
 class widgetClock(Label):
     def update(self, *args):
         self.text = time.asctime()
 
 class mealsToRegister():
-    # methods
-    def get():
-        mealsToRegisterRequest = requests.get('http://127.0.0.1:5000/soogikorrad-registreerimisele-avatud')
-        if mealsToRegisterRequest.status_code != 200:
-            # This means something went wrong.
-            raise ApiError('GET /tasks/ {}'.format(mealsToRegisterRequest.status_code))
-        return mealsToRegisterRequest.json()
+    # variables
+    getUrl = 'http://127.0.0.1:5000/soogikorrad-registreerimisele-avatud'
+    postUrl = 'http://127.0.0.1:5000/opilase-soogikorrad'
 
-# class registrationModule():
-#
-#     # methods
-#     def getUID():
+    # methods
+    # Pärib andmeid serverist
+    def get(self):
+        self.getResponse = requests.get(self.getUrl)
+        if self.getResponse.status_code != 200:
+            # This means something went wrong.
+            raise ApiError('GET /tasks/ {}'.format(self.mealsToRegisterRequest.status_code))
+        return self.getResponse.json()
+    # Saadab andmed serverile
+    def post(self, payload):
+        self.postResponse = requests.post(self.postUrl, json = payload)
+        return self.postResponse
+
+class registrationModule():
+    # methods
+    def getUID(self):
+
+        # Hook the SIGINT
+        self.signal.signal(signal.SIGINT, end_read)
+
+        # Create an object of the class MFRC522
+        self.MIFAREReader = MFRC522.MFRC522()
+
+        # Scan for cards
+        (self.status,self.TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
+
+        # If a card is found
+        if self.status == MIFAREReader.MI_OK:
+            print("Card detected")
+
+        # Get the UID of the card
+        (self.status,self.uid) = MIFAREReader.MFRC522_Anticoll()
+
+        # If we have the UID, continue
+        if self.status == MIFAREReader.MI_OK:
+
+            uidSTR = ''.join(map(str, uid))
+
+            # return UID
+            return self.uidSTR
+
 
 
 class TestApp(App):
@@ -44,10 +75,13 @@ class TestApp(App):
         layoutDate.add_widget(widgetClock1)
 
         mealsToRegister1 = mealsToRegister()
-        meals = mealsToRegister.get()
+        meals = mealsToRegister1.get()
 
         for meal in meals:
             layoutButtons.add_widget(Button(text=meal['nimetus']))
+
+        data = {'uid': '13213021943246', 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
+        mealsToRegister1.post(data)
 
         layout.add_widget(layoutDate)
         layout.add_widget(layoutButtons)

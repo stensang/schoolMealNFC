@@ -12,21 +12,21 @@ ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_isikukood;
 ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_soogikorra_seisundi_liik_kood;
 ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_soogikorra_liik_kood;
 
-DROP INDEX IF EXISTS IDX_tootaja_ametid_amet_kood
-DROP INDEX IF EXISTS IDX_tootaja_ametid_isikukood
-DROP INDEX IF EXISTS IDX_tootaja_tootaja_seisundi_liik_kood
-DROP INDEX IF EXISTS IDX_opilase_soogikorrad_opilane_ID
-DROP INDEX IF EXISTS IDX_opilase_soogikorrad_soogikorra_ID
-DROP INDEX IF EXISTS IDX_opilane_opilase_seisundi_liik_kood
-DROP INDEX IF EXISTS IDX_opilane_klass_ID
-DROP INDEX IF EXISTS IDX_soogikord_soogikorra_seisundi_liik_kood
-DROP INDEX IF EXISTS IDX_soogikord_soogikorra_liik_kood
-DROP INDEX IF EXISTS IDX_soogikord_isikukood
-DROP INDEX IF EXISTS IDX_klass_kooliaste_kood
-DROP INDEX IF EXISTS IDX_klass_klassi_seisundi_liik_kood
-DROP INDEX IF EXISTS IDX_klass_isikukood
+DROP INDEX IF EXISTS IDX_tootaja_ametid_amet_kood;
+DROP INDEX IF EXISTS IDX_tootaja_ametid_isikukood;
+DROP INDEX IF EXISTS IDX_tootaja_tootaja_seisundi_liik_kood;
+DROP INDEX IF EXISTS IDX_opilase_soogikorrad_opilane_ID;
+DROP INDEX IF EXISTS IDX_opilase_soogikorrad_soogikorra_ID;
+DROP INDEX IF EXISTS IDX_opilane_opilase_seisundi_liik_kood;
+DROP INDEX IF EXISTS IDX_opilane_klass_ID;
+DROP INDEX IF EXISTS IDX_soogikord_soogikorra_seisundi_liik_kood;
+DROP INDEX IF EXISTS IDX_soogikord_soogikorra_liik_kood;
+DROP INDEX IF EXISTS IDX_soogikord_isikukood;
+DROP INDEX IF EXISTS IDX_klass_kooliaste_kood;
+DROP INDEX IF EXISTS IDX_klass_klassi_seisundi_liik_kood;
+DROP INDEX IF EXISTS IDX_klass_isikukood;
 
-DROP TABLE IF EXISTS Soogikorra_liik;
+DROP TABLE IF EXISTS Soogikorra_liik CASCADE;
 DROP TABLE IF EXISTS Opilane;
 DROP TABLE IF EXISTS Kooliaste;
 DROP TABLE IF EXISTS Opilase_seisundi_liik;
@@ -41,7 +41,7 @@ DROP TABLE IF EXISTS Tootaja_seisundi_liik;
 DROP TABLE IF EXISTS Klassi_seisundi_liik;
 
 CREATE TABLE Tootaja (
-	isikukood VARCHAR ( 11 ) NOT NULL,
+	isikukood CHAR ( 11 ) NOT NULL,
 	eesnimi VARCHAR ( 255 ) NOT NULL,
 	perenimi VARCHAR ( 255 ) NOT NULL,
 	epost VARCHAR ( 255 ) NOT NULL,
@@ -88,7 +88,7 @@ CREATE INDEX IDX_klass_klassi_seisundi_liik_kood ON Klass (klassi_seisundi_liik_
 CREATE INDEX IDX_klass_isikukood ON Klass (isikukood );
 CREATE TABLE Opilane (
 	opilane_ID SERIAL NOT NULL,
-	UID INTEGER NOT NULL,
+	UID VARCHAR (15) NOT NULL,
 	opilase_seisundi_liik_kood SMALLINT NOT NULL,
 	klass_ID SMALLINT NOT NULL,
 	CONSTRAINT TC_opilane_UID UNIQUE (UID),
@@ -203,7 +203,7 @@ INSERT INTO Klass (klass_ID, nimetus, isikukood, kooliaste_kood, klassi_seisundi
 INSERT INTO Opilase_seisundi_liik (opilase_seisundi_liik_kood, nimetus) VALUES (0, 'lõpetanud');
 INSERT INTO Opilase_seisundi_liik (opilase_seisundi_liik_kood, nimetus) VALUES (1, 'õpib');
 
-INSERT INTO Opilane (UID, opilase_seisundi_liik_kood, klass_ID) VALUES (1122334455, 1, 1);
+INSERT INTO Opilane (UID, opilase_seisundi_liik_kood, klass_ID) VALUES ('13213021943246', 1, 1);
 
 CREATE MATERIALIZED VIEW Soogikorrad_registreerimisele_avatud AS
 SELECT Soogikord.soogikorra_id, Soogikorra_liik.nimetus
