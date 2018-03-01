@@ -17,7 +17,7 @@ api = Api(app)
 app.debug = True
 # app.config['JSON_AS_ASCII'] = False
 
-# Response marshalling
+# Payload marshalling
 avatudSoogikorrad = api.model('Registreerimiseks avatud söögikorrad', {
     'soogikorra_id' : fields.Integer,
 })

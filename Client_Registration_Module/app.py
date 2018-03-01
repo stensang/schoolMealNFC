@@ -8,6 +8,7 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 import time
+import signal
 # import MFRC522
 
 class widgetClock(Label):
@@ -32,46 +33,52 @@ class mealsToRegister():
         self.postResponse = requests.post(self.postUrl, json = payload)
         return self.postResponse
 
-class registrationModule():
+class nfcReader():
     # methods
     def getUID(self):
 
         # Hook the SIGINT
-        self.signal.signal(signal.SIGINT, end_read)
+        # signal.signal(signal.SIGINT, end_read)
 
         # Create an object of the class MFRC522
         self.MIFAREReader = MFRC522.MFRC522()
 
         # Scan for cards
-        (self.status,self.TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
+        (self.status,self.TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
 
         # If a card is found
-        if self.status == MIFAREReader.MI_OK:
+        if self.status == self.MIFAREReader.MI_OK:
             print("Card detected")
 
         # Get the UID of the card
-        (self.status,self.uid) = MIFAREReader.MFRC522_Anticoll()
+        (self.status,self.uid) = self.MIFAREReader.MFRC522_Anticoll()
 
         # If we have the UID, continue
-        if self.status == MIFAREReader.MI_OK:
+        if self.status == self.MIFAREReader.MI_OK:
 
-            uidSTR = ''.join(map(str, uid))
+            self.uidSTR = ''.join(map(str, self.uid))
 
             # return UID
-            mr = mealsToRegister()
-
+            self.mr = mealsToRegister()
             return self.uidSTR
 
-class registration(Label):
-    def update(self):
-        self.rm = registrationModule()
-        self.uid = rm.getUID()
+class registration():
+    def update(self, *args):
+        self.nfc = nfcReader()
+        self.uid = self.nfc.getUID()
         if self.uid is not None:
-            self.data = {'uid': uid, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
-            mealsToRegister1.post(data)
-            self.text = self.uid
-        else:
-            self.text = 'Vali soovitud toidukorrad ja aseta õpilaspilet lugerile.'
+	    self.mr = mealsToRegister()
+            self.data = {'uid': self.uid, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
+            self.mr.post(self.data)
+            return self.uid
+
+class registrationStatus(Label):
+    def update(self, *args):
+    	self.reg = registration()
+    	if self.reg.update() is not None:
+    	    self.text = self.reg.update()
+    	else:
+    	    self.text = 'Blaa blaa blaa'
 
 
 class TestApp(App):
@@ -90,11 +97,11 @@ class TestApp(App):
         meals = mealsToRegister1.get()
 
         for meal in meals:
-            layoutButtons.add_widget(ToggleButton(text=meal['nimetus']))
+            layoutButtons.add_widget(ToggleButton(text=meal['nimetus']), state= 'down' if meal['vaikimisi'] else '')
 
-        reg = registration()
-        Clock.schedule_interval(reg.update, 0.5)
-        layoutDate.add_widget()
+        rs = registrationStatus()
+        Clock.schedule_interval(rs.update, 1)
+        layoutDate.add_widget(rs)
 
         layout.add_widget(layoutDate)
         layout.add_widget(layoutButtons)

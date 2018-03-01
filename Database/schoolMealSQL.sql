@@ -130,6 +130,7 @@ CREATE TABLE Soogikord (
 	soogikorra_seisundi_liik_kood SMALLINT NOT NULL,
 	soogikorra_liik_kood SMALLINT NOT NULL,
 	kuupaev DATE NOT NULL,
+	vaikimisi BOOLEAN NOT NULL,
 	kirjeldus VARCHAR ( 200 ),
 	CONSTRAINT PK_soogikord PRIMARY KEY (soogikorra_ID)
 	);
@@ -191,9 +192,9 @@ INSERT INTO Tootaja (isikukood, eesnimi, perenimi, epost, parool, tootaja_seisun
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 1219);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 2341);
 
-INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 1, '2018-02-16', 'Kirjeldus ...');
-INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 2, '2018-02-16', 'Kirjeldus ...');
-INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, kirjeldus) VALUES ('38001010014', 3, 3, '2018-02-16', 'Kirjeldus ...');
+INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus) VALUES ('38001010014', 3, 2, '2018-02-16', '1', 'Kirjeldus ...');
+INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus) VALUES ('38001010014', 3, 3, '2018-02-16', '0', 'Kirjeldus ...');
+INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus) VALUES ('38001010014', 3, 1, '2018-02-16', '0', 'Kirjeldus ...');
 
 INSERT INTO Klassi_seisundi_liik (klassi_seisundi_liik_kood, nimetus) VALUES (0, 'lõpetanud');
 INSERT INTO Klassi_seisundi_liik (klassi_seisundi_liik_kood, nimetus) VALUES (1, 'aktiivne');
@@ -206,7 +207,7 @@ INSERT INTO Opilase_seisundi_liik (opilase_seisundi_liik_kood, nimetus) VALUES (
 INSERT INTO Opilane (UID, opilase_seisundi_liik_kood, klass_ID) VALUES ('13213021943246', 1, 1);
 
 CREATE MATERIALIZED VIEW Soogikorrad_registreerimisele_avatud AS
-SELECT Soogikord.soogikorra_id, Soogikorra_liik.nimetus
+SELECT Soogikord.soogikorra_id, Soogikorra_liik.nimetus, Soogikord.vaikimisi
 FROM Soogikord
 JOIN Soogikorra_liik
     ON Soogikord.soogikorra_liik_kood = Soogikorra_liik.soogikorra_liik_kood
