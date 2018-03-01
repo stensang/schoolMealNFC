@@ -7,9 +7,10 @@ from kivy.uix.label import Label
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
+import threading
 import time
 import signal
-# import MFRC522
+import MFRC522
 
 class widgetClock(Label):
     def update(self, *args):
@@ -33,53 +34,63 @@ class mealsToRegister():
         self.postResponse = requests.post(self.postUrl, json = payload)
         return self.postResponse
 
-class nfcReader():
+class nfcReader(threading.Thread):
     # methods
-    def getUID(self):
+    def __init__(self):
+
+        # Capture SIGINT for cleanup when the script is aborted
+        def end_read(signal,frame):
+            global continue_reading
+            print "Ctrl+C captured, ending read."
+            continue_reading = False
+            GPIO.cleanup()
 
         # Hook the SIGINT
-        # signal.signal(signal.SIGINT, end_read)
+        signal.signal(signal.SIGINT, end_read)
 
         # Create an object of the class MFRC522
         self.MIFAREReader = MFRC522.MFRC522()
 
-        # Scan for cards
-        (self.status,self.TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
+        # This loop keeps checking for chips. If one is near it will get the UID and authenticate
+        while continue_reading:
 
-        # If a card is found
-        if self.status == self.MIFAREReader.MI_OK:
-            print("Card detected")
+            # Scan for cards
+            (self.status,self.TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
 
-        # Get the UID of the card
-        (self.status,self.uid) = self.MIFAREReader.MFRC522_Anticoll()
+            # If a card is found
+            if self.status == self.MIFAREReader.MI_OK:
+                print("Card detected")
 
-        # If we have the UID, continue
-        if self.status == self.MIFAREReader.MI_OK:
+            # Get the UID of the card
+            (self.status,self.uid) = self.MIFAREReader.MFRC522_Anticoll()
 
-            self.uidSTR = ''.join(map(str, self.uid))
+            # If we have the UID, continue
+            if self.status == self.MIFAREReader.MI_OK:
 
-            # return UID
-            self.mr = mealsToRegister()
-            return self.uidSTR
+                self.uidSTR = ''.join(map(str, self.uid))
+
+                # return UID
+                self.mr = mealsToRegister()
+                return self.uidSTR
 
 
-class registration():
-    def update(self, *args):
-        self.nfc = nfcReader()
-        self.uid = self.nfc.getUID()
-        if self.uid is not None:
-	    self.mr = mealsToRegister()
-            self.data = {'uid': self.uid, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
-            self.mr.post(self.data)
-            return self.uid
-
-class registrationStatus(Label):
-    def update(self, *args):
-    	self.reg = registration()
-    	if self.reg.update() is not None:
-    	    self.text = self.reg.update()
-    	else:
-    	    self.text = 'Blaa blaa blaa'
+# class registration():
+#     def update(self, *args):
+#         self.nfc = nfcReader()
+#         self.uid = self.nfc.getUID()
+#         if self.uid is not None:
+# 	    self.mr = mealsToRegister()
+#             self.data = {'uid': self.uid, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
+#             self.mr.post(self.data)
+#             return self.uid
+#
+# class registrationStatus(Label):
+#     def update(self, *args):
+#     	self.reg = registration()
+#     	if self.reg.update() is not None:
+#     	    self.text = self.reg.update()
+#     	else:
+#     	    self.text = 'Blaa blaa blaa'
 
 
 class TestApp(App):
@@ -100,9 +111,11 @@ class TestApp(App):
         for meal in meals:
             layoutButtons.add_widget(ToggleButton(text=meal['nimetus'], state= 'down' if meal['vaikimisi'] else 'normal'))
 
-        rs = registrationStatus()
-        Clock.schedule_interval(rs.update, 1)
-        layoutDate.add_widget(rs)
+        nfc = nfcReader()
+
+        # rs = registrationStatus()
+        # Clock.schedule_interval(rs.update, 1)
+        # layoutDate.add_widget(rs)
 
         layout.add_widget(layoutDate)
         layout.add_widget(layoutButtons)
