@@ -25,10 +25,8 @@ class PGDatabase():
         self.records_list = []
         for self.r in self.records:
             self.dictionary = {}
-            self.column = 0
-            for self.item in self.r:
-                self.dictionary[self.cursor.description[self.column][0]] = self.item
-                self.column +=1
+            for self.i, self.item in enumerate(self.r):
+                self.dictionary[self.cursor.description[self.i][0]] = self.item
             self.records_list.append(self.dictionary)
         return self.records_list
         print("Records sended!\n")

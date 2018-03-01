@@ -62,6 +62,7 @@ class nfcReader():
             self.mr = mealsToRegister()
             return self.uidSTR
 
+
 class registration():
     def update(self, *args):
         self.nfc = nfcReader()
@@ -97,7 +98,7 @@ class TestApp(App):
         meals = mealsToRegister1.get()
 
         for meal in meals:
-            layoutButtons.add_widget(ToggleButton(text=meal['nimetus']), state= 'down' if meal['vaikimisi'] else '')
+            layoutButtons.add_widget(ToggleButton(text=meal['nimetus'], state= 'down' if meal['vaikimisi'] else 'normal'))
 
         rs = registrationStatus()
         Clock.schedule_interval(rs.update, 1)
