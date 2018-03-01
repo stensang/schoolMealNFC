@@ -6,7 +6,7 @@ from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 import threading
 import time
 import signal
@@ -18,8 +18,8 @@ class widgetClock(Label):
 
 class mealsToRegister():
     # variables
-    getUrl = 'http://127.0.0.1:5000/soogikorrad-registreerimisele-avatud'
-    postUrl = 'http://127.0.0.1:5000/opilase-soogikorrad'
+    getUrl = 'http://192.168.1.186:5000/soogikorrad-registreerimisele-avatud'
+    postUrl = 'http://192.168.1.186:5000/opilase-soogikorrad'
 
     # methods
     # Pärib andmeid serverist
@@ -34,64 +34,35 @@ class mealsToRegister():
         self.postResponse = requests.post(self.postUrl, json = payload)
         return self.postResponse
 
-class nfcReader(threading.Thread):
-    # methods
-    def __init__(self):
+class nfcReader(Label):
 
-        # Capture SIGINT for cleanup when the script is aborted
-        def end_read(signal,frame):
-            global continue_reading
-            print "Ctrl+C captured, ending read."
-            continue_reading = False
-            GPIO.cleanup()
+    mr = mealsToRegister()
 
-        # Hook the SIGINT
-        signal.signal(signal.SIGINT, end_read)
+    def update(self, *args):
 
+        self.text = "Näita kaarti!"
         # Create an object of the class MFRC522
         self.MIFAREReader = MFRC522.MFRC522()
 
-        # This loop keeps checking for chips. If one is near it will get the UID and authenticate
-        while continue_reading:
+        # Scan for cards
+        (self.status,self.TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
 
-            # Scan for cards
-            (self.status,self.TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
+        # If a card is found
+        if self.status == self.MIFAREReader.MI_OK:
+            print("Card detected")
 
-            # If a card is found
-            if self.status == self.MIFAREReader.MI_OK:
-                print("Card detected")
+        # Get the UID of the card
+        (self.status, uid) = self.MIFAREReader.MFRC522_Anticoll()
 
-            # Get the UID of the card
-            (self.status,self.uid) = self.MIFAREReader.MFRC522_Anticoll()
+        # If we have the UID, continue
+        if self.status == self.MIFAREReader.MI_OK:
 
-            # If we have the UID, continue
-            if self.status == self.MIFAREReader.MI_OK:
+            uidSTR = ''.join(map(str, uid))
+            self.text = uidSTR
 
-                self.uidSTR = ''.join(map(str, self.uid))
-
-                # return UID
-                self.mr = mealsToRegister()
-                return self.uidSTR
-
-
-# class registration():
-#     def update(self, *args):
-#         self.nfc = nfcReader()
-#         self.uid = self.nfc.getUID()
-#         if self.uid is not None:
-# 	    self.mr = mealsToRegister()
-#             self.data = {'uid': self.uid, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
-#             self.mr.post(self.data)
-#             return self.uid
-#
-# class registrationStatus(Label):
-#     def update(self, *args):
-#     	self.reg = registration()
-#     	if self.reg.update() is not None:
-#     	    self.text = self.reg.update()
-#     	else:
-#     	    self.text = 'Blaa blaa blaa'
-
+            # Testin API-t
+            self.data = {'uid': uidSTR, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
+            self.mr.post(self.data)
 
 class TestApp(App):
 
@@ -112,6 +83,9 @@ class TestApp(App):
             layoutButtons.add_widget(ToggleButton(text=meal['nimetus'], state= 'down' if meal['vaikimisi'] else 'normal'))
 
         nfc = nfcReader()
+
+        Clock.schedule_interval(nfc.update, 0.5)
+        layoutDate.add_widget(nfc)
 
         # rs = registrationStatus()
         # Clock.schedule_interval(rs.update, 1)
