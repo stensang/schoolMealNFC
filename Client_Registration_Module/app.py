@@ -10,39 +10,55 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
 import time
-import signal
 import MFRC522
+import RPi.GPIO as GPIO
 
 class widgetClock(Label):
     def update(self, *args):
         self.text = time.asctime()
 
 class AvailableMeals():
-    # variables
-    getUrl = 'http://192.168.1.186:5000/soogikorrad-registreerimisele-avatud'
-    postUrl = 'http://192.168.1.186:5000/opilase-soogikorrad'
+    '''DESCRIPTON'''
 
-    # methods
-    # Pärib andmeid serverist
+    def __init__(self):
+        '''DESCRIPTON'''
+
+        self.URL = 'http://192.168.1.186:5000/soogikorrad-registreerimisele-avatud'
+
     def get(self):
-        self.getResponse = requests.get(self.getUrl)
+        '''DESCRIPTON'''
+
+        self.getResponse = requests.get(self.URL)
         if self.getResponse.status_code != 200:
             # This means something went wrong.
             raise ApiError('GET /tasks/ {}'.format(self.AvailableMealsRequest.status_code))
         return self.getResponse.json()
-    # Saadab andmed serverile
+
+class RegisterMeals():
+    '''DESCRIPTON'''
+
+    def __init__(self):
+        '''DESCRIPTON'''
+
+        self.URL = 'http://192.168.1.186:5000/opilase-soogikorrad'
+
     def register(self, payload):
-        self.postResponse = requests.post(self.postUrl, json = payload)
+        '''DESCRIPTON'''
+
+        self.postResponse = requests.post(self.URL, json = payload)
         return self.postResponse
 
-class CardReader():
+class RfidReader():
+    '''DESCRIPTON'''
 
-    #am = AvailableMeals()
+    def __init__(self):
+        '''DESCRIPTON'''
 
-    # Create an object of the class MFRC522
-    MIFAREReader = MFRC522.MFRC522()
+        # Create an object of the class MFRC522
+        self.MIFAREReader = MFRC522.MFRC522()
 
     def getUID(self, *args):
+        '''DESCRIPTON'''
 
         # Scan for cards
         (self.status,self.TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
@@ -53,77 +69,133 @@ class CardReader():
         # If we have the UID, continue
         if self.status == self.MIFAREReader.MI_OK:
 
+            # Join UID to string and return
             uidSTR = ''.join(map(str, uid))
-
-            # Testin API-t
-            # self.data = {'uid': uidSTR, 'soogikorrad': [{'soogikorra_id': 1}, {'soogikorra_id': 2}, {'soogikorra_id': 3}]}
-            # self.am.register(self.data)
-
             return uidSTR
 
-class CardUID(Label):
 
-    nfc = CardReader()
+class RegistrationHandler():
+    '''DESCRIPTON'''
+
+    def __init__(self):
+        '''DESCRIPTON'''
+
+        self.nfc = RfidReader()
+        self.rm = RegisterMeals()
 
     def update(self, *args):
+        '''DESCRIPTON'''
+
         if RaspberryPi.sm.current != 'main':
-            time.sleep(0.5)
+            time.sleep(1)
             RaspberryPi.sm.current = 'main'
-        self.text = "Näita kaarti!"
+
         self.uidSTR = self.nfc.getUID()
+
         if self.uidSTR is not None:
+
+            self.data = {}
+            self.data['uid'] = self.uidSTR
+            self.data['soogikorrad'] = RaspberryPi.ms.getCheckedMeals()
+
+            self.rm.register(self.data)
             RaspberryPi.sm.current = 'response'
-            #self.text = self.uidSTR
+
+class MToggleButton(ToggleButton):
+    soogikorra_id=""
 
 class Meals(BoxLayout):
+    '''DESCRIPTON'''
 
     def __init__(self, **kwargs):
+        '''DESCRIPTON'''
+
         super(Meals, self).__init__(**kwargs)
 
         am = AvailableMeals()
         meals = am.get()
 
         for meal in meals:
-            self.add_widget(ToggleButton(text=meal['nimetus'], state= 'down' if meal['vaikimisi'] else 'normal'))
+            button = (MToggleButton(
+            text=meal['nimetus'],
+            state= 'down' if meal['vaikimisi'] else 'normal'))
 
-class Registrator(BoxLayout):
+            button.soogikorra_id = meal['soogikorra_id']
+            self.add_widget(button)
+
+
+class MainScreen(Screen):
+    '''DESCRIPTON'''
 
     def __init__(self, **kwargs):
-        super(Registrator, self).__init__(**kwargs)
+        '''DESCRIPTON'''
 
-        self.layoutDate = BoxLayout(orientation='vertical')
+        super(MainScreen, self).__init__(**kwargs)
+        self.name = 'main'
+
         self.layoutMeals = Meals(orientation='vertical')
-
-        self.widgetClock1 = widgetClock()
-        Clock.schedule_interval(self.widgetClock1.update, 1)
-        self.layoutDate.add_widget(self.widgetClock1)
-
-        self.cardUID = CardUID()
-
-        Clock.schedule_interval(self.cardUID.update, 0.5)
-        self.layoutDate.add_widget(self.cardUID)
-
-        self.add_widget(self.layoutDate)
         self.add_widget(self.layoutMeals)
+
+        #self.layoutDate = BoxLayout(orientation='vertical')
+        #self.widgetClock1 = widgetClock()
+        #Clock.schedule_interval(self.widgetClock1.update, 1)
+        #self.layoutMeals.add_widget(self.widgetClock1)
+        #self.add_widget(self.layoutDate)
+
+    def getCheckedMeals(self):
+        '''DESCRIPTON'''
+
+        self.checkedMeals = []
+        for self.meal in self.layoutMeals.children:
+            if self.meal.state=='down':
+                self.d = {}
+                self.d['soogikorra_id'] = self.meal.soogikorra_id
+                self.checkedMeals.append(self.d)
+
+        return self.checkedMeals
+
+class ResponseScreen(Screen):
+    '''DESCRIPTON'''
+
+    def __init__(self, **kwargs):
+        '''DESCRIPTON'''
+
+        super(ResponseScreen, self).__init__(**kwargs)
+        self.name = 'response'
+
+        self.add_widget(Label(text='Aitäh! Andmete sisestamine õnnestus.'))
 
 
 class RaspberryPi(App):
+    '''DESCRIPTON'''
 
     sm = ScreenManager(transition=NoTransition())
+    ms = MainScreen()
+    rs = ResponseScreen()
 
     def build(self):
-
-        self.ms = Screen(name='main')
-        self.rt = Registrator()
-        self.ms.add_widget(self.rt)
-
-        self.rs = Screen(name='response')
-        self.rs.add_widget(Label(text='Hello world!'))
+        '''DESCRIPTON'''
 
         self.sm.add_widget(self.ms)
         self.sm.add_widget(self.rs)
 
+        self.rh = RegistrationHandler()
+        Clock.schedule_interval(self.rh.update, 0.5)
+
         return self.sm
 
 if __name__ == '__main__':
-    RaspberryPi().run()
+
+    try:
+        RaspberryPi().run()
+
+    except KeyboardInterrupt:
+
+        print("Programmi sulgemine")
+
+    except Exception, error:
+
+        print str(error)
+
+    finally:
+        GPIO.cleanup()
