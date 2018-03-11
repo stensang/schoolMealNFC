@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<div class="container">
+    <h1 class="display-3">Koondandmed</h1>
+    <h2 class="display-4 meal-heading">{{ lunch['nimetus'] + " " + lunch['kuupäev'] }}</h2>
+    <div class="row">
+      {% for sööjate_grupp in lunch['registreerimised'] %}
+        <div class="col-md-4">
+          <h2 class="display-5 age-group">{{ sööjate_grupp['sööjate_grupi_nimetus'] }}</h2>
+          <div class="progress">
+            {% set registreeritud = sööjate_grupp['klassid'] | sum(attribute='söögikorrale_registreeritud') %}
+            {% set õpilased_kokku = sööjate_grupp['klassid'] | sum(attribute='õpilasi_klassis') %}
+            {% set protsent = (registreeritud/õpilased_kokku * 100) | round %}
+            <div class="progress-bar bg-success" role="progressbar"
+            style="width: {{protsent}}%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"> {{protsent}}%  </div>
+          </div>
+          <h3 class="display-5 registration-summary">{{registreeritud}}/{{õpilased_kokku}}</h3>
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th scope="col">Klass</th>
+                <th scope="col">Reg.</th>
+                <th scope="col">Õp.</th>
+                <th scope="col">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for klass in sööjate_grupp['klassid'] | sort(attribute='nimetus') %}
+                <tr class=" {% if klass['söögikorrale_registreeritud'] / klass['õpilasi_klassis'] == 1 %} all-registered {% endif %}" >
+                    <td>{{ klass['nimetus'] }}</td>
+                    <td>{{ klass['söögikorrale_registreeritud'] }}</td>
+                    <td>{{ klass['õpilasi_klassis'] }}</td>
+                    <td>{{ klass['söögikorrale_registreeritud'] / klass['õpilasi_klassis'] * 100}}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

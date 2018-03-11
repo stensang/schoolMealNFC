@@ -42,7 +42,7 @@ class OpilaseSoogikorrad(Resource):
 
         # Andmebaasi ühenduse avamine
         db = PGDatabase()
-        # Õpilase ID pärimine kasutades UID
+        # Õpilase ID pärimine kasutades UID, LISADA kontroll, kas õpilase staatus on kehtiv (andmebaasi), või pärida vaadet, kus on kõik aktiivsed õpilased
         db.execute("""SELECT opilane_ID FROM Opilane WHERE UID= %s ;""", (uid,))
         records = db.getRecords()
         # LISADA: Kontrolli, kas tagastatakse ID, kui ei, siis sellise UID-ga õpilast ei ole. Sulge ühendus.
@@ -60,14 +60,58 @@ class OpilaseSoogikorrad(Resource):
 
 
 @api.route('/soogikorrad-registreerimisele-avatud')
-class MealsToRegister(Resource):
+class AvatudSoogikorrad(Resource):
     def get(self):
         db = PGDatabase()
-        db.execute("""SELECT * FROM Soogikorrad_registreerimisele_avatud LIMIT 3""", "")
+        db.execute("""SELECT soogikorra_id, nimetus, vaikimisi FROM Soogikorrad_registreerimisele_avatud LIMIT 3""", "")
         mealstToRegisterData = db.getRecords()
         db.close()
-        # No need for jsonify, flask_restplus assumes you return jsonify
+        # No need for jsonify, flask_restplus assumes you return json
         return mealstToRegisterData
+
+@api.route('/lounasook/<string:date>')
+class Lounasook(Resource):
+    def get(self, date):
+        db = PGDatabase()
+        db.execute("""SELECT s.soogikorra_id, sl.nimetus, to_char(s.kuupaev, 'DD.MM.YYYY') as kuupäev
+                    FROM Soogikord s JOIN Soogikorra_liik sl
+                    ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood
+                    WHERE s.kuupaev = %s
+                    AND s.soogikorra_liik_kood = 2""", (date,))
+        lunch = db.getRecords()
+        lunchDict = lunch[0]
+
+        registrations = []
+
+        db.execute("""SELECT soojate_grupp_kood, nimetus FROM soojate_grupp""", "")
+        groups = db.getRecords()
+
+
+        for group in groups:
+            groupDict = {}
+            groupDict['sööjate_grupi_nimetus'] = group['nimetus']
+
+            db.execute("""SELECT k.nimetus, k.opilasi_klassis, s.opilasi_registreeritud
+                        FROM  Klass_opilasi_klassis k JOIN Soogikorrad_klasside_registreerimised s
+                        ON  k.klass_id = s.klass_id
+                        WHERE s.soogikorra_id = %s AND k.soojate_grupp_kood= %s""", (lunchDict['soogikorra_id'], group['soojate_grupp_kood']))
+            classes = db.getRecords()
+
+            classList = []
+            for c in classes:
+                classDict = {}
+                classDict['nimetus'] = c['nimetus']
+                classDict['õpilasi_klassis'] = c['opilasi_klassis']
+                classDict['söögikorrale_registreeritud'] = c['opilasi_registreeritud']
+                classList.append(classDict)
+
+            groupDict['klassid'] = classList
+            registrations.append(groupDict)
+
+        db.close()
+
+        lunchDict['registreerimised'] = registrations
+        return lunchDict
 
 if __name__ == '__main__':
     app.run()
