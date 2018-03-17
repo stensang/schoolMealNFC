@@ -190,6 +190,17 @@ GROUP BY opilase_soogikorrad.soogikorra_id, opilane.klass_id;
 
 -- MATERIALIZED VIEWS
 
+CREATE MATERIALIZED VIEW public.soogikordade_koondtabel AS
+ SELECT s.soogikorra_id,
+    sl.nimetus,
+    s.kuupaev,
+    s.kirjeldus,
+    s.vaikimisi,
+    ssl.nimetus as seisund
+   FROM soogikord s
+     JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood
+     JOIN soogikorra_seisundi_liik ssl ON s.soogikorra_seisundi_liik_kood = ssl.soogikorra_seisundi_liik_kood;
+
 CREATE MATERIALIZED VIEW Soogikorrad_registreerimisele_avatud AS
 SELECT Soogikord.soogikorra_id, Soogikorra_liik.nimetus, Soogikord.vaikimisi
 FROM Soogikord JOIN Soogikorra_liik

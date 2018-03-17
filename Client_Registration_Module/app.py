@@ -23,7 +23,7 @@ class AvailableMeals():
     def __init__(self):
         '''DESCRIPTON'''
 
-        self.URL = 'http://192.168.1.186:5000/soogikorrad-registreerimisele-avatud'
+        self.URL = 'http://192.168.1.186:5000/soogikorrad?seisund=3'
 
     def get(self):
         '''DESCRIPTON'''
