@@ -188,10 +188,9 @@ SELECT opilase_soogikorrad.soogikorra_id, opilane.klass_id, COUNT(*) as opilasi_
 FROM opilase_soogikorrad JOIN opilane on opilase_soogikorrad.opilane_id = opilane.opilane_id
 GROUP BY opilase_soogikorrad.soogikorra_id, opilane.klass_id;
 
--- MATERIALIZED VIEWS
-
-CREATE MATERIALIZED VIEW public.soogikordade_koondtabel AS
+CREATE VIEW Soogikordade_koondtabel AS
  SELECT s.soogikorra_id,
+ 		s.isikukood,
     sl.nimetus,
     s.kuupaev,
     s.kirjeldus,
@@ -200,6 +199,8 @@ CREATE MATERIALIZED VIEW public.soogikordade_koondtabel AS
    FROM soogikord s
      JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood
      JOIN soogikorra_seisundi_liik ssl ON s.soogikorra_seisundi_liik_kood = ssl.soogikorra_seisundi_liik_kood;
+
+-- MATERIALIZED VIEWS
 
 CREATE MATERIALIZED VIEW Soogikorrad_registreerimisele_avatud AS
 SELECT Soogikord.soogikorra_id, Soogikorra_liik.nimetus, Soogikord.vaikimisi

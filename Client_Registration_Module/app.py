@@ -23,15 +23,12 @@ class AvailableMeals():
     def __init__(self):
         '''DESCRIPTON'''
 
-        self.URL = 'http://192.168.1.186:5000/soogikorrad?seisund=3'
+        self.URL = 'http://192.168.1.134:5000/soogikorrad?seisund=Registreerimine%20avatud'
 
     def get(self):
         '''DESCRIPTON'''
 
         self.getResponse = requests.get(self.URL)
-        if self.getResponse.status_code != 200:
-            # This means something went wrong.
-            raise ApiError('GET /tasks/ {}'.format(self.AvailableMealsRequest.status_code))
         return self.getResponse.json()
 
 class RegisterMeals():
@@ -40,7 +37,7 @@ class RegisterMeals():
     def __init__(self):
         '''DESCRIPTON'''
 
-        self.URL = 'http://192.168.1.186:5000/opilase-soogikorrad'
+        self.URL = 'http://192.168.1.134:5000/opilane/soogikorrad'
 
     def register(self, payload):
         '''DESCRIPTON'''

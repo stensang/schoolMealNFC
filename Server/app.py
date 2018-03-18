@@ -19,11 +19,20 @@ app.debug = True
 
 # Payload marshalling
 
-soogikord = api.model('Soogikord', {
+sisestatav_soogikord = api.model('Soogikord', {
     'isikukood' : fields.String('Söögikorra lisaja isikukood (nt "38001010014")'),
     'seisund' : fields.Integer('Söögikorra seisund (nt 0-arhiveeritud, 1-koostamisel, 2-kinnitatud, 3-registreerimine avatud, 4-registreerimine suletud)'),
     'liik' : fields.Integer ('Söögikorra liik (nt 1-hommikusöök, 2-lõunasöök, 3-lisaeine)'),
-    'kuupaev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
+    'kuupäev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
+    'vaikimisi' : fields.String ('Kas söögikord on vaikimisi valik? (nt "True"/"False")'),
+    'kirjeldus' : fields.String ('Söögikorra kirjeldus (nt "Väga maitsev")'),
+})
+
+soogikord = api.model('Soogikord', {
+    'isikukood' : fields.String('Söögikorra lisaja isikukood (nt "38001010014")'),
+    'seisund' : fields.Integer('Söögikorra seisund (nt "arhiveeritud", "koostamisel", "kinnitatud", "registreerimine avatud", "registreerimine suletud")'),
+    'liik' : fields.Integer ('Söögikorra liik (nt 1-hommikusöök, 2-lõunasöök, 3-lisaeine)'),
+    'kuupäev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
     'vaikimisi' : fields.String ('Kas söögikord on vaikimisi valik? (nt "True"/"False")'),
     'kirjeldus' : fields.String ('Söögikorra kirjeldus (nt "Väga maitsev")'),
 })
@@ -40,6 +49,7 @@ opilaseSoogikorrad = api.model('Õpilase söögikorrad', {
 
 @api.route('/soogikorrad')
 class Soogikorrad(Resource):
+
     def get(self):
 
         seisund = request.args.get("seisund")
@@ -62,7 +72,7 @@ class Soogikorrad(Resource):
         # No need for jsonify, flask_restplus assumes you return json
         return soogikorrad
 
-    @api.expect(soogikord, validate=True)
+    @api.expect(sisestatav_soogikord, validate=True)
     def post(self):
         # Andmete lugemine POST sõnumist
         content = request.json
@@ -70,11 +80,12 @@ class Soogikorrad(Resource):
         isikukood = content['isikukood']
         soogikorra_seisundi_liik_kood = content['seisund']
         soogikorra_liik_kood = content['liik']
-        kuupaev = content['kuupaev']
+        kuupaev = content['kuupäev']
         vaikimisi = content['vaikimisi']
         kirjeldus = content['kirjeldus']
 
         db = PGDatabase()
+        # Teha sisestus läbi PostgreSQL-i vaate (view)
         db.execute("""
                     INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus)
                     VALUES (%s, %s, %s, %s, %s, %s);""",
@@ -86,11 +97,13 @@ class Soogikorrad(Resource):
 
 @api.route('/soogikorrad/<int:soogikorra_id>')
 class Soogikord(Resource):
+
+    @api.marshal_with(soogikord)
     def get(self, soogikorra_id):
 
         db = PGDatabase()
         db.execute("""
-                    SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                    SELECT sk.soogikorra_id, sk.isikukood, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                     FROM soogikordade_koondtabel sk
                     WHERE soogikorra_id = %s;""", (soogikorra_id,))
 
@@ -98,7 +111,11 @@ class Soogikord(Resource):
         db.close()
         return soogikord
 
+    @api.expect(sisestatav_soogikord)
     def put(self, soogikorra_id):
+        pass
+
+    def delete(self, soogikorra_id):
         pass
 
 @api.route('/soogikorrad/<int:soogikorra_id>/registreerimised')
