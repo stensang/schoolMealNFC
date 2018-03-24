@@ -12,7 +12,7 @@
           <div class="progress">
             {% set registreeritud = sööjate_grupp['klassid'] | sum(attribute='söögikorrale_registreeritud') %}
             {% set õpilased_kokku = sööjate_grupp['klassid'] | sum(attribute='õpilasi_klassis') %}
-            {% set protsent = (registreeritud/õpilased_kokku * 100) | round %}
+            {% set protsent = (registreeritud/õpilased_kokku * 100) if registreeritud != 0 else 0 | round %}
             <div class="progress-bar bg-success" role="progressbar"
             style="width: {{protsent}}%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"> {{protsent}}%  </div>
           </div>

@@ -18,23 +18,16 @@ app.debug = True
 # app.config['JSON_AS_ASCII'] = False
 
 # Payload marshalling
-
-sisestatav_soogikord = api.model('Soogikord', {
-    'isikukood' : fields.String('Söögikorra lisaja isikukood (nt "38001010014")'),
-    'seisund' : fields.Integer('Söögikorra seisund (nt 0-arhiveeritud, 1-koostamisel, 2-kinnitatud, 3-registreerimine avatud, 4-registreerimine suletud)'),
+muudetavSoogikord = api.model('Muudetav söögikord', {
+    'seisund' : fields.Integer('Söögikorra seisund (nt "arhiveeritud", "koostamisel", "kinnitatud", "registreerimine avatud", "registreerimine suletud")'),
     'liik' : fields.Integer ('Söögikorra liik (nt 1-hommikusöök, 2-lõunasöök, 3-lisaeine)'),
     'kuupäev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
     'vaikimisi' : fields.String ('Kas söögikord on vaikimisi valik? (nt "True"/"False")'),
     'kirjeldus' : fields.String ('Söögikorra kirjeldus (nt "Väga maitsev")'),
 })
 
-soogikord = api.model('Soogikord', {
+soogikord = api.inherit('Söögikord', muudetavSoogikord, {
     'isikukood' : fields.String('Söögikorra lisaja isikukood (nt "38001010014")'),
-    'seisund' : fields.Integer('Söögikorra seisund (nt "arhiveeritud", "koostamisel", "kinnitatud", "registreerimine avatud", "registreerimine suletud")'),
-    'liik' : fields.Integer ('Söögikorra liik (nt 1-hommikusöök, 2-lõunasöök, 3-lisaeine)'),
-    'kuupäev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
-    'vaikimisi' : fields.String ('Kas söögikord on vaikimisi valik? (nt "True"/"False")'),
-    'kirjeldus' : fields.String ('Söögikorra kirjeldus (nt "Väga maitsev")'),
 })
 
 avatudSoogikorrad = api.model('Registreerimiseks avatud söögikorrad', {
@@ -72,7 +65,7 @@ class Soogikorrad(Resource):
         # No need for jsonify, flask_restplus assumes you return json
         return soogikorrad
 
-    @api.expect(sisestatav_soogikord, validate=True)
+    @api.expect(soogikord, validate=True)
     def post(self):
         # Andmete lugemine POST sõnumist
         content = request.json
@@ -95,6 +88,24 @@ class Soogikorrad(Resource):
 
         return {'Tulemus': 'Soogikord lisatud'}, 201
 
+@api.route('/soogikorrad/seisundid')
+class SoogikorraSeisundid(Resource):
+    def get(self):
+        db = PGDatabase()
+        db.execute("""SELECT soogikorra_seisundi_liik_kood as kood, nimetus, COALESCE(kirjeldus, 'puudub') as kirjeldus from Soogikorra_seisundi_liik;""", "")
+        seisundid = db.getRecords()
+        db.close
+        return seisundid
+
+@api.route('/soogikorrad/liigid')
+class SoogikorraLiigid(Resource):
+    def get(self):
+        db = PGDatabase()
+        db.execute("""SELECT soogikorra_liik_kood as kood, nimetus, COALESCE(kirjeldus, 'puudub') as kirjeldus from Soogikorra_liik;""", "")
+        liigid = db.getRecords()
+        db.close
+        return liigid
+
 @api.route('/soogikorrad/<int:soogikorra_id>')
 class Soogikord(Resource):
 
@@ -111,12 +122,39 @@ class Soogikord(Resource):
         db.close()
         return soogikord
 
-    @api.expect(sisestatav_soogikord)
+    @api.expect(muudetavSoogikord)
     def put(self, soogikorra_id):
-        pass
+        # Andmete lugemine PUT sõnumist
+        content = request.json
+
+        soogikorra_seisundi_liik_kood = content['seisund']
+        soogikorra_liik_kood = content['liik']
+        kuupaev = content['kuupäev']
+        vaikimisi = content['vaikimisi']
+        kirjeldus = content['kirjeldus']
+
+        db = PGDatabase()
+        # Teha sisestus läbi PostgreSQL-i vaate (view)
+        db.execute("""
+                    UPDATE Soogikord SET
+                    soogikorra_seisundi_liik_kood = %s,
+                    soogikorra_liik_kood = %s,
+                    kuupaev = %s,
+                    vaikimisi = %s,
+                    kirjeldus = %s
+                    WHERE soogikorra_id = %s;""",
+                    (soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus, soogikorra_id))
+        db.commit()
+        db.close()
+
+        return {'Tulemus': 'Soogikorra info muudetud'}, 201
 
     def delete(self, soogikorra_id):
-        pass
+        # Muuta selliselt, et kustutamine toimuks läbi PostgreSQL-i vaate
+        db = PGDatabase()
+        db.execute("""DELETE FROM Soogikord where soogikorra_id = %s;""", (soogikorra_id,))
+        db.commit()
+        db.close
 
 @api.route('/soogikorrad/<int:soogikorra_id>/registreerimised')
 class Registreerimised(Resource):
@@ -142,10 +180,16 @@ class Registreerimised(Resource):
             groupDict['sööjate_grupi_nimetus'] = group['nimetus']
 
             db.execute("""
-                        SELECT k.nimetus, k.opilasi_klassis, s.opilasi_registreeritud
-                        FROM  Klass_opilasi_klassis k JOIN Soogikorrad_klasside_registreerimised s
-                        ON  k.klass_id = s.klass_id
-                        WHERE s.soogikorra_id = %s AND k.soojate_grupp_kood= %s
+                        WITH Registreerimised AS (
+                          SELECT s.klass_id, s.opilasi_registreeritud
+                          FROM Soogikorrad_klasside_registreerimised s
+                          WHERE s.soogikorra_id = %s
+                        )
+
+                        SELECT k.nimetus, k.opilasi_klassis, COALESCE(r.opilasi_registreeritud, 0) AS opilasi_registreeritud
+                        FROM Klass_opilasi_klassis k LEFT JOIN Registreerimised r
+                        ON k.klass_id = r.klass_id
+                        WHERE k.soojate_grupp_kood = %s;
                         """, (lunchDict['soogikorra_id'], group['soojate_grupp_kood']))
 
             classes = db.getRecords()

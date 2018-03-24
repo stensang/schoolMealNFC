@@ -6,8 +6,10 @@
     <p class="lead">
 
       <form method="POST" action="">
+
+        {{ vorm.csrf_token }}
         <div class="form-group">
-          <div>{{ vorm.isikukood.label }}: {{ vorm.isikukood(class="form-control") }}</div>
+          <div>{{ vorm.isikukood.label }}: {{ vorm.isikukood(class="form-control", value="38001010014") }}</div>
         </div>
         <div class="form-group">
           <div>{{ vorm.seisund.label }}: {{ vorm.seisund(class="form-control") }}</div>
@@ -16,14 +18,13 @@
           <div>{{ vorm.liik.label }}: {{ vorm.liik(class="form-control") }}</div>
         </div>
         <div class="form-group">
-          <div>{{ vorm.kuupaev.label }}: {{ vorm.kuupaev(class="form-control") }}</div>
-        </div>
-        <div class="form-group">
-          <div>{{  vorm.vaikimisi.label }}: {{ vorm.vaikimisi(class="form-control") }}</div>
+          <div>{{ vorm.kuupaev.label }}: {{ vorm.kuupaev(class="form-control", type="date", value="2018-02-02") }}</div>
         </div>
         <div class="form-group">
           <div>{{  vorm.kirjeldus.label }}: {{ vorm.kirjeldus(class="form-control") }}</div>
         </div>
+        <input type="submit" class="btn btn-success" value="Sisesta">
+        <a href="/" role="button" class="btn btn-warning">Tühista</a>
       </form>
 
     </p>
