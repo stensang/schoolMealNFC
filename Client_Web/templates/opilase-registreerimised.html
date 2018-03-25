@@ -1,0 +1,32 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<div class="container">
+    <h1 class="display-5">{{ opilaseAndmed['eesnimi'] }} {{ opilaseAndmed['perekonnanimi'] }} registreerimised</h1>
+
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th scope="col">Kuu</th>
+              {% for söögikord in opilaseAndmed['registreerimised'] | sort(attribute='nimetus') %}
+                  <th scope="col">{{ söögikord['nimetus'] }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td>2018-02</td>
+              {% for söögikord in opilaseAndmed['registreerimised'] | sort(attribute='nimetus') %}
+                  <td>{{ söögikord['registreerimised'] }}</td>
+              {% endfor %}
+              </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+</div>
+
+{% endblock %}

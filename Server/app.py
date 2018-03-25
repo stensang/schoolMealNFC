@@ -34,6 +34,13 @@ avatudSoogikorrad = api.model('Registreerimiseks avatud söögikorrad', {
     'soogikorra_id' : fields.Integer,
 })
 
+opilane = api.model('Õpilane', {
+    'opilase_id' : fields.String,
+    'eesnimi' : fields.String,
+    'perekonnanimi' : fields.String,
+    'klass' : fields.String
+})
+
 opilaseSoogikorrad = api.model('Õpilase söögikorrad', {
     'uid' : fields.String,
     'soogikorrad' : fields.List(fields.Nested(avatudSoogikorrad)),
@@ -53,12 +60,12 @@ class Soogikorrad(Resource):
                         SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                         FROM soogikordade_koondtabel sk
                         WHERE seisund = %s
-                        LIMIT 30;""", (seisund,))
+                        ORDER BY kuupäev LIMIT 30;""", (seisund,))
         else:
             db.execute("""
                         SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                         FROM soogikordade_koondtabel sk
-                        LIMIT 100;""", ("",))
+                        ORDER BY kuupäev LIMIT 100;""", ("",))
 
         soogikorrad = db.getRecords()
         db.close()
@@ -157,7 +164,7 @@ class Soogikord(Resource):
         db.close
 
 @api.route('/soogikorrad/<int:soogikorra_id>/registreerimised')
-class Registreerimised(Resource):
+class SoogikorraRegistreerimised(Resource):
     def get(self, soogikorra_id):
 
         db = PGDatabase()
@@ -210,11 +217,42 @@ class Registreerimised(Resource):
         lunchDict['registreerimised'] = registrations
         return lunchDict
 
-@api.route('/opilane/soogikorrad')
-# Inherit from Resource
-class OpilaseSoogikorrad(Resource):
+@api.route('/opilased')
+class Opilased(Resource):
     def get(self):
-        return {'This': 'Works'}
+        db = PGDatabase()
+        db.execute("""SELECT ok.opilase_id, ok.eesnimi, ok.perekonnanimi, ok.klass FROM Opilaste_koondtabel ok;""", "")
+        opilased = db.getRecords()
+        db.close
+        return opilased
+
+
+@api.route('/opilased/<int:opilase_id>/registreerimised')
+# Inherit from Resource
+class OpilaseRegistreerimised(Resource):
+
+    def get(self, opilase_id):
+        kuu = request.args.get("kuu")
+        db = PGDatabase()
+        db.execute("""
+                    SELECT o.eesnimi, o.perekonnanimi
+                    FROM Opilane o WHERE o.opilane_id = %s;""", (opilase_id,))
+
+        opilane = db.getRecords()
+        opilaseAndmed = opilane[0]
+
+        if kuu is None:
+            kuu = '2018-02'
+
+        db.execute("""SELECT opr.kuu, opr.nimetus, opr.registreerimised
+                      FROM Opilaste_registreerimised opr WHERE opr.opilase_id = %s AND opr.kuu = %s
+                      ORDER BY opr.kuu, opr.nimetus LIMIT 100 """, (opilase_id, kuu))
+        söögikorrad = db.getRecords()
+
+        db.close()
+
+        opilaseAndmed['registreerimised'] = söögikorrad
+        return opilaseAndmed
 
     # Informatsiooni valideerimine
     @api.expect(opilaseSoogikorrad, validate=True)

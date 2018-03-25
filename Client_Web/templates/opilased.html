@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<div class="container">
+    <h1 class="display-3">Õpilased</h1>
+
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Eesnimi</th>
+              <th scope="col">Perekonnanimi</th>
+              <th scope="col">Klass</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for opilane in opilased %}
+              <tr>
+                  <td>{{ opilane['opilase_id'] }}</td>
+                  <td>{{ opilane['eesnimi'] }}</td>
+                  <td>{{ opilane['perekonnanimi'] }}</td>
+                  <td>{{ opilane['klass']}}</td>
+                  <td><a href="/opilased/{{ opilane['opilase_id'] }}/registreerimised" role="button" class="btn btn-outline-info btn-sm">Registreerimised</a></td>
+              </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -55,9 +55,9 @@ def lisaSoogikord():
     return render_template('soogikorra-lisamine.html', vorm=vorm)
 
 @app.route('/soogikorrad/<string:id>/registreerimised')
-def registreerimised(id="1"):
+def soogikorraRegistreerimised(id="1"):
     andmed = requests.get('http://127.0.0.1:5000/soogikorrad/' + id + '/registreerimised')
-    return render_template('soogikorra-koondandmed.html', soogikorraAndmed=andmed.json())
+    return render_template('soogikorra-registreerimised.html', soogikorraAndmed=andmed.json())
 
 @app.route('/soogikorrad/muuda/<string:id>', methods = ['POST'])
 def muudaSoogikord(id):
@@ -82,6 +82,17 @@ def muudaSoogikord(id):
 def kustutaSoogikord(id):
     request = requests.delete('http://127.0.0.1:5000/soogikorrad/' + id)
     return redirect('/')
+
+@app.route('/opilased')
+def opilased():
+    andmed = requests.get('http://127.0.0.1:5000/opilased')
+    return render_template('opilased.html', opilased=andmed.json())
+
+@app.route('/opilased/<string:id>/registreerimised')
+def opilaseRegistreerimised(id):
+    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised')
+    print(andmed)
+    return render_template('opilase-registreerimised.html', opilaseAndmed=andmed.json())
 
 # Only run if it is a main file
 if __name__ == '__main__':

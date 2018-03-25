@@ -46,7 +46,7 @@ DROP TABLE IF EXISTS Soojate_grupp;
 CREATE TABLE Tootaja (
 	isikukood CHAR ( 11 ) NOT NULL,
 	eesnimi VARCHAR ( 255 ) NOT NULL,
-	perenimi VARCHAR ( 255 ) NOT NULL,
+	perekonnanimi VARCHAR ( 255 ) NOT NULL,
 	epost VARCHAR ( 255 ) NOT NULL,
 	parool VARCHAR ( 255 ) NOT NULL,
 	tootaja_seisundi_liik_kood SMALLINT NOT NULL,
@@ -94,6 +94,8 @@ CREATE INDEX IDX_klass_soojate_grupp_kood ON Klass (soojate_grupp_kood);
 CREATE TABLE Opilane (
 	opilane_ID SERIAL NOT NULL,
 	UID VARCHAR (15) NOT NULL,
+	eesnimi VARCHAR ( 255 ) NOT NULL,
+	perekonnanimi VARCHAR ( 255 ) NOT NULL,
 	opilase_seisundi_liik_kood SMALLINT NOT NULL,
 	klass_ID SMALLINT NOT NULL,
 	CONSTRAINT TC_opilane_UID UNIQUE (UID),
@@ -188,6 +190,17 @@ SELECT opilase_soogikorrad.soogikorra_id, opilane.klass_id, COUNT(*) as opilasi_
 FROM opilase_soogikorrad JOIN opilane on opilase_soogikorrad.opilane_id = opilane.opilane_id
 GROUP BY opilase_soogikorrad.soogikorra_id, opilane.klass_id;
 
+-- Tuleb mõelda parem süsteem, sest tabeli suurenedes läheb päringuks palju aega. Muuta opilane_id -> opilase_id
+CREATE VIEW Opilaste_registreerimised AS
+SELECT os.opilane_id as opilase_id,
+			to_char(s.kuupaev,'YYYY-MM') as kuu,
+			sl.nimetus,
+			COUNT(*) AS registreerimised
+FROM opilase_soogikorrad os
+	INNER JOIN soogikord s ON os.soogikorra_id = s.soogikorra_id
+	INNER JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood
+GROUP BY 1, 2, 3;
+
 CREATE VIEW Soogikordade_koondtabel AS
  SELECT s.soogikorra_id,
  		s.isikukood,
@@ -197,8 +210,14 @@ CREATE VIEW Soogikordade_koondtabel AS
     s.vaikimisi,
     ssl.nimetus as seisund
    FROM soogikord s
-     JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood
-     JOIN soogikorra_seisundi_liik ssl ON s.soogikorra_seisundi_liik_kood = ssl.soogikorra_seisundi_liik_kood;
+     INNER JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood
+     INNER JOIN soogikorra_seisundi_liik ssl ON s.soogikorra_seisundi_liik_kood = ssl.soogikorra_seisundi_liik_kood;
+
+CREATE VIEW Opilaste_koondtabel AS
+ SELECT o.opilane_ID AS opilase_id, o.eesnimi, o.perekonnanimi, k.nimetus as klass
+		FROM opilane o INNER JOIN Klass k ON o.klass_id = k.klass_id
+ WHERE k.klassi_seisundi_liik_kood = 1;
+
 
 -- MATERIALIZED VIEWS
 
@@ -242,7 +261,7 @@ INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VA
 INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (3, 'Registreerimine avatud');
 INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VALUES (4, 'Registreerimine suletud');
 
-INSERT INTO Tootaja (isikukood, eesnimi, perenimi, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'Eesnimi', 'Perenimi', 'eesnimi.perenimi@epost.ee', 'Trustno1', 1);
+INSERT INTO Tootaja (isikukood, eesnimi, perekonnanimi, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'Eesnimi', 'perekonnanimi', 'eesnimi.perekonnanimi@epost.ee', 'Trustno1', 1);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 1219);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 2341);
 
@@ -268,26 +287,28 @@ INSERT INTO Klass (klass_ID, nimetus, isikukood, kooliaste_kood, klassi_seisundi
 INSERT INTO Opilase_seisundi_liik (opilase_seisundi_liik_kood, nimetus) VALUES (0, 'lõpetanud');
 INSERT INTO Opilase_seisundi_liik (opilase_seisundi_liik_kood, nimetus) VALUES (1, 'õpib');
 
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (1, '13213021943240', 1, 1);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (2, '13213021943241', 1, 1);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (3, '13213021943242', 1, 2);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (4, '13213021943243', 1, 2);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (5, '13213021943244', 1, 3);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (6, '13213021943245', 1, 3);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (7, '13213021943246', 1, 4);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (8, '13213021943247', 1, 4);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (9, '13213021943248', 1, 5);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (10, '13213021943249', 1, 5);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (11, '13213021943250', 1, 6);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (12, '13213021943251', 1, 6);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (13, '13213021943252', 1, 7);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (14, '13213021943253', 1, 7);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (15, '13213021943254', 1, 8);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (16, '13213021943255', 1, 8);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (17, '13213021943256', 1, 9);
-INSERT INTO Opilane (opilane_ID, UID, opilase_seisundi_liik_kood, klass_ID) VALUES (18, '13213021943257', 1, 9);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (1, '13213021943240', 'Eesnimi', 'Perekonnanimi', 1, 1);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (2, '13213021943241', 'Eesnimi', 'Perekonnanimi', 1, 1);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (3, '13213021943242', 'Eesnimi', 'Perekonnanimi', 1, 2);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (4, '13213021943243', 'Eesnimi', 'Perekonnanimi', 1, 2);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (5, '13213021943244', 'Eesnimi', 'Perekonnanimi', 1, 3);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (6, '13213021943245', 'Eesnimi', 'Perekonnanimi', 1, 3);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (7, '13213021943246', 'Eesnimi', 'Perekonnanimi', 1, 4);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (8, '13213021943247', 'Eesnimi', 'Perekonnanimi', 1, 4);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (9, '13213021943248', 'Eesnimi', 'Perekonnanimi', 1, 5);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (10, '13213021943249', 'Eesnimi', 'Perekonnanimi', 1, 5);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (11, '13213021943250', 'Eesnimi', 'Perekonnanimi', 1, 6);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (12, '13213021943251', 'Eesnimi', 'Perekonnanimi', 1, 6);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (13, '13213021943252', 'Eesnimi', 'Perekonnanimi', 1, 7);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (14, '13213021943253', 'Eesnimi', 'Perekonnanimi', 1, 7);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (15, '13213021943254', 'Eesnimi', 'Perekonnanimi', 1, 8);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (16, '13213021943255', 'Eesnimi', 'Perekonnanimi', 1, 8);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (17, '13213021943256', 'Eesnimi', 'Perekonnanimi', 1, 9);
+INSERT INTO Opilane (opilane_ID, UID, eesnimi, perekonnanimi, opilase_seisundi_liik_kood, klass_ID) VALUES (18, '13213021943257', 'Eesnimi', 'Perekonnanimi', 1, 9);
 
 INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (1, 1, '2018-02-16');
+INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (2, 1, '2018-02-16');
+INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (3, 1, '2018-02-16');
 INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (1, 2, '2018-02-16');
 INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (1, 3, '2018-02-16');
 INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (1, 4, '2018-02-16');
