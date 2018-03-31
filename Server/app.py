@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 # http://flask-restplus.readthedocs.io/en/stable/
 from flask_restplus import Api, Resource, fields
 import datetime
+import calendar
 import sys
 from database import PGDatabase
 
@@ -53,6 +54,7 @@ class Soogikorrad(Resource):
     def get(self):
 
         seisund = request.args.get("seisund")
+
         db = PGDatabase()
 
         if seisund is not None:
@@ -226,33 +228,82 @@ class Opilased(Resource):
         db.close
         return opilased
 
+class Opilane(Resource):
+    def get(self, id):
+        db = PGDatabase()
+        db.execute("""SELECT ok.opilase_id, ok.eesnimi, ok.perekonnanimi, ok.klass FROM Opilaste_koondtabel ok
+                    WHERE ok.opilase_id=%s;""", (id, ))
+        opilane = db.getRecords()
+        db.close
+        return opilane
+
+@api.route('/opilased/registreerimised')
+
+class OpilasteRegistreerimised(Resource):
+
+    def get(self):
+
+        try:
+            alguseKuupaev = request.args.get('alguse-kuupaev')
+        except:
+            alguseKuupaev = datetime.date.today().replace(day=1).strftime('%Y-%m-%d')
+
+        try:
+            lopuKuupaev = request.args.get('lopu-kuupaev')
+        except:
+            lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%Y-%m-%d')
+
+        opilased = Opilased.get(self)
+
+        opilasteRegistreerimised = []
+        db = PGDatabase()
+
+        for opilane in opilased:
+            db.execute("""SELECT ork.nimetus, COUNT(*) as registreerimisi
+                          FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.opilase_id = %s
+                          AND kuupaev BETWEEN %s AND %s
+                          GROUP BY ork.nimetus
+                          ORDER BY ork.nimetus LIMIT 100 """, (opilane['opilase_id'], alguseKuupaev, lopuKuupaev))
+            soogikorrad = db.getRecords()
+            opilane['registreerimised'] = soogikorrad
+            opilasteRegistreerimised.append(opilane)
+
+        db.close()
+        return opilasteRegistreerimised
 
 @api.route('/opilased/<int:opilase_id>/registreerimised')
 # Inherit from Resource
 class OpilaseRegistreerimised(Resource):
 
     def get(self, opilase_id):
-        kuu = request.args.get("kuu")
+
+        try:
+            alguseKuupaev = request.args.get('alguse-kuupaev')
+        except:
+            alguseKuupaev = datetime.date.today().replace(day=1).strftime('%Y-%m-%d')
+
+        try:
+            lopuKuupaev = request.args.get('lopu-kuupaev')
+        except:
+            lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%Y-%m-%d')
+
+        opilane = Opilane.get(self, opilase_id)
+
+        opilaseRegistreerimised = opilane[0]
+
         db = PGDatabase()
-        db.execute("""
-                    SELECT o.eesnimi, o.perekonnanimi
-                    FROM Opilane o WHERE o.opilane_id = %s;""", (opilase_id,))
 
-        opilane = db.getRecords()
-        opilaseAndmed = opilane[0]
-
-        if kuu is None:
-            kuu = '2018-02'
-
-        db.execute("""SELECT opr.kuu, opr.nimetus, opr.registreerimised
-                      FROM Opilaste_registreerimised opr WHERE opr.opilase_id = %s AND opr.kuu = %s
-                      ORDER BY opr.kuu, opr.nimetus LIMIT 100 """, (opilase_id, kuu))
-        söögikorrad = db.getRecords()
+        db.execute("""SELECT ork.soogikorra_id, ork.nimetus, to_char(ork.kuupaev, 'DD.MM.YYYY') as kuupäev
+                      FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.opilase_id = %s
+                      AND kuupaev BETWEEN %s AND %s
+                      ORDER BY ork.kuupaev, ork.soogikorra_id LIMIT 100 """, (opilase_id, alguseKuupaev, lopuKuupaev))
+        soogikorrad = db.getRecords()
 
         db.close()
 
-        opilaseAndmed['registreerimised'] = söögikorrad
-        return opilaseAndmed
+        opilaseRegistreerimised['registreerimised'] = soogikorrad
+
+        return opilaseRegistreerimised
 
     # Informatsiooni valideerimine
     @api.expect(opilaseSoogikorrad, validate=True)

@@ -73,7 +73,8 @@ CREATE TABLE Opilase_soogikorrad (
 	soogikorra_ID SMALLINT NOT NULL,
 	opilane_ID SMALLINT NOT NULL,
 	registreerimise_kuupaev DATE NOT NULL,
-	CONSTRAINT PK_opilase_soogikorrad PRIMARY KEY (opilase_soogikorra_ID)
+	CONSTRAINT PK_opilase_soogikorrad PRIMARY KEY (opilase_soogikorra_ID),
+	CONSTRAINT TC_Opilase_soogikorrad_soogikorra_id_opilane_id UNIQUE (soogikorra_ID, opilane_ID)
 	);
 CREATE INDEX IDX_opilase_soogikorrad_opilane_ID ON Opilase_soogikorrad (opilane_ID );
 CREATE INDEX IDX_opilase_soogikorrad_soogikorra_ID ON Opilase_soogikorrad (soogikorra_ID );
@@ -189,6 +190,15 @@ CREATE VIEW Soogikorrad_klasside_registreerimised AS
 SELECT opilase_soogikorrad.soogikorra_id, opilane.klass_id, COUNT(*) as opilasi_registreeritud
 FROM opilase_soogikorrad JOIN opilane on opilase_soogikorrad.opilane_id = opilane.opilane_id
 GROUP BY opilase_soogikorrad.soogikorra_id, opilane.klass_id;
+
+CREATE VIEW Opilaste_registreerimiste_koondtabel AS
+SELECT s.soogikorra_id,
+	sl.nimetus,
+	os.opilane_id as opilase_id,
+	s.kuupaev
+FROM opilase_soogikorrad os
+	INNER JOIN soogikord s ON os.soogikorra_id = s.soogikorra_id
+	INNER JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood;
 
 -- Tuleb mõelda parem süsteem, sest tabeli suurenedes läheb päringuks palju aega. Muuta opilane_id -> opilase_id
 CREATE VIEW Opilaste_registreerimised AS

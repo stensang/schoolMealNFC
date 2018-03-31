@@ -1,5 +1,7 @@
 import requests
-from datetime import datetime
+import datetime
+import calendar
+import sys
 from flask import Flask, render_template, request, flash, redirect
 from flask_wtf import FlaskForm
 from wtforms import Form, StringField, BooleanField, SubmitField, DateField, TextAreaField, SelectField, validators
@@ -25,6 +27,10 @@ class SoogikorraMuutmiseVorm(FlaskForm):
 
 class SoogikorraSisestamiseVorm(SoogikorraMuutmiseVorm):
     isikukood = StringField('Isikukood')
+
+class KuupaevaVahemikuVorm(FlaskForm):
+    algusekuupaev = DateField('Alguse kuupäev')
+    lopukuupaev = DateField('Lõpu kuupäev')
 
 @app.route('/')
 @app.route('/soogikorrad')
@@ -83,16 +89,40 @@ def kustutaSoogikord(id):
     request = requests.delete('http://127.0.0.1:5000/soogikorrad/' + id)
     return redirect('/')
 
-@app.route('/opilased')
-def opilased():
-    andmed = requests.get('http://127.0.0.1:5000/opilased')
-    return render_template('opilased.html', opilased=andmed.json())
+@app.route('/opilased/registreerimised')
+def opilasteRegistreerimised():
+
+    vorm = KuupaevaVahemikuVorm()
+
+    alguseKuupaev = request.args.get('algusekuupaev')
+    if alguseKuupaev is None:
+        alguseKuupaev = datetime.date.today().replace(day=1).strftime('%d.%m.%Y')
+    lopuKuupaev = request.args.get('lopukuupaev')
+    if lopuKuupaev is None:
+        lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%d.%m.%Y')
+
+    opilasteAndmed = requests.get('http://127.0.0.1:5000/opilased/registreerimised?alguse-kuupaev=' + alguseKuupaev + '&lopu-kuupaev=' + lopuKuupaev)
+    soogikorraAndmed = requests.get('http://127.0.0.1:5000/soogikorrad/liigid')
+
+    return render_template('opilaste-registreerimised.html', opilased=opilasteAndmed.json(), soogikorraLiigid=soogikorraAndmed.json(), vorm=vorm,
+    alguseKuupaev=alguseKuupaev, lopuKuupaev = lopuKuupaev)
 
 @app.route('/opilased/<string:id>/registreerimised')
 def opilaseRegistreerimised(id):
-    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised')
-    print(andmed)
-    return render_template('opilase-registreerimised.html', opilaseAndmed=andmed.json())
+
+    vorm = KuupaevaVahemikuVorm()
+
+    alguseKuupaev = request.args.get('algusekuupaev')
+    if alguseKuupaev is None:
+        alguseKuupaev = datetime.date.today().replace(day=1).strftime('%d.%m.%Y')
+    lopuKuupaev = request.args.get('lopukuupaev')
+    if lopuKuupaev is None:
+        lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%d.%m.%Y')
+
+    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised?alguse-kuupaev=' + alguseKuupaev + '&lopu-kuupaev=' + lopuKuupaev)
+
+    return render_template('opilase-registreerimised.html', opilaseAndmed=andmed.json(), vorm=vorm,
+    alguseKuupaev=alguseKuupaev, lopuKuupaev = lopuKuupaev)
 
 # Only run if it is a main file
 if __name__ == '__main__':

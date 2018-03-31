@@ -4,10 +4,10 @@
 
 <div class="container">
     <h1 class="display-3">Soogikordade loetelu</h1>
-
+    <a href="/soogikorrad/lisa" role="button" class="btn btn-success mb-3">Lisa uus söögikord</a>
     <div class="row">
       <div class="col-md-12">
-        <table class="table table-sm table-hover">
+        <table class="table table-sm table-hover data-table">
           <thead>
             <tr>
               <th scope="col">ID</th>
@@ -20,7 +20,7 @@
             </tr>
           </thead>
           <tbody>
-          {% for soogikord in soogikorrad %}
+          {% for soogikord in soogikorrad | sort(attribute='soogikorra_id', reverse=True) %}
               <tr>
                   <td>{{ soogikord['soogikorra_id'] }}</td>
                   <td>{{ soogikord['kuupäev'] }}</td>

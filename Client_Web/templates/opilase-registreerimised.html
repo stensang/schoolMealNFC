@@ -5,24 +5,37 @@
 <div class="container">
     <h1 class="display-5">{{ opilaseAndmed['eesnimi'] }} {{ opilaseAndmed['perekonnanimi'] }} registreerimised</h1>
 
+    <form class="" method="GET" action="">
+      <div class="row date-range">
+        <div class="input-daterange input-group col-md-10" id="datepicker">
+          {{ vorm.algusekuupaev(class="input-sm form-control", type="text", value=alguseKuupaev) }}
+          <span class="input-group-text"> kuni </span>
+          {{ vorm.lopukuupaev(class="input-sm form-control", type="text", value=lopuKuupaev) }}
+        </div>
+        <div class="col-md-2">
+          <input type="submit" class="btn btn-success" value="Sisesta">
+        </div>
+      </div>
+    </form>
+
     <div class="row">
       <div class="col-md-12">
-        <table class="table table-sm table-hover">
+        <table class="table table-sm table-hover data-table">
           <thead>
             <tr>
-              <th scope="col">Kuu</th>
-              {% for söögikord in opilaseAndmed['registreerimised'] | sort(attribute='nimetus') %}
-                  <th scope="col">{{ söögikord['nimetus'] }}</th>
-              {% endfor %}
+              <th scope="col">ID</th>
+              <th scope="col">Kuupäev</th>
+              <th scope="col">Nimetus</th>
             </tr>
           </thead>
           <tbody>
+          {% for söögikord in opilaseAndmed['registreerimised'] %}
               <tr>
-                  <td>2018-02</td>
-              {% for söögikord in opilaseAndmed['registreerimised'] | sort(attribute='nimetus') %}
-                  <td>{{ söögikord['registreerimised'] }}</td>
-              {% endfor %}
+                  <td>{{ söögikord['soogikorra_id'] }}</td>
+                  <td>{{ söögikord['kuupäev'] }}</td>
+                  <td>{{ söögikord['nimetus'] }}</td>
               </tr>
+          {% endfor %}
           </tbody>
         </table>
       </div>
