@@ -20,5 +20,11 @@
 
 .date-range {
   margin: 30px 0 50px 0;
-  
+
+}
+.form-signin {
+    width: 100%;
+    max-width: 420px;
+    padding: 15px;
+    margin: 0 auto;
 }

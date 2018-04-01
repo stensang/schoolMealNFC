@@ -20,10 +20,10 @@
 
     <div class="row">
       <div class="col-md-12">
-        <table class="table table-sm table-hover data-table">
+        <table class="table table-sm table-hover opilaste-registreerimised">
           <thead>
             <tr>
-              <th scope="col">ID</th>
+              <th scope="col">Isikukood</th>
               <th scope="col">Eesnimi</th>
               <th scope="col">Perekonnanimi</th>
               <th scope="col">Klass</th>
@@ -34,9 +34,9 @@
             </tr>
           </thead>
           <tbody>
-          {% for opilane in opilased %}
+          {% for opilane in opilased | sort(attribute='klass')%}
               <tr>
-                  <td>{{ opilane['opilase_id'] }}</td>
+                  <td>{{ opilane['isikukood'] }}</td>
                   <td>{{ opilane['eesnimi'] }}</td>
                   <td>{{ opilane['perekonnanimi'] }}</td>
                   <td>{{ opilane['klass']}}</td>
@@ -47,7 +47,7 @@
                         {% endfor %}
                       </td>
                   {% endfor %}
-                  <td><a href="/opilased/{{ opilane['opilase_id'] }}/registreerimised?algusekuupaev={{alguseKuupaev}}&lopukuupaev{{lopuKuupaev}}"
+                  <td><a href="/opilased/{{ opilane['isikukood'] }}/registreerimised?algusekuupaev={{alguseKuupaev}}&lopukuupaev{{lopuKuupaev}}"
                     role="button" class="btn btn-outline-info btn-sm">Info</a></td>
               </tr>
           {% endfor %}

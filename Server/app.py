@@ -2,17 +2,19 @@
 # -*- coding: utf-8 -*-
 
 # http://flask.pocoo.org/
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 # http://flask-restplus.readthedocs.io/en/stable/
 from flask_restplus import Api, Resource, fields
 import datetime
 import calendar
 import sys
 from database import PGDatabase
+from flask_httpauth import HTTPBasicAuth
 
 # Initialize
 app = Flask(__name__)
 api = Api(app)
+auth = HTTPBasicAuth()
 
 # App to debug mode - website changes with refresh
 app.debug = True
@@ -36,7 +38,7 @@ avatudSoogikorrad = api.model('Registreerimiseks avatud söögikorrad', {
 })
 
 opilane = api.model('Õpilane', {
-    'opilase_id' : fields.String,
+    'isikukood' : fields.String,
     'eesnimi' : fields.String,
     'perekonnanimi' : fields.String,
     'klass' : fields.String
@@ -47,10 +49,22 @@ opilaseSoogikorrad = api.model('Õpilase söögikorrad', {
     'soogikorrad' : fields.List(fields.Nested(avatudSoogikorrad)),
 })
 
+kasutajaAndmed = api.model('Kasutaja andmed', {
+    'kasutajatunnus' : fields.String,
+    'parool' : fields.String,
+})
+
+@auth.verify_password
+def verify_password(username, password):
+    db = PGDatabase()
+    db.execute("""SELECT f_on_majandusala_juhataja(%s, %s) as on_majandusala_juhataja;""", (username, password))
+    result = db.getRecords()
+    return result[0]['on_majandusala_juhataja']
 
 @api.route('/soogikorrad')
 class Soogikorrad(Resource):
 
+    @auth.login_required
     def get(self):
 
         seisund = request.args.get("seisund")
@@ -74,6 +88,7 @@ class Soogikorrad(Resource):
         # No need for jsonify, flask_restplus assumes you return json
         return soogikorrad
 
+    @auth.login_required
     @api.expect(soogikord, validate=True)
     def post(self):
         # Andmete lugemine POST sõnumist
@@ -99,6 +114,7 @@ class Soogikorrad(Resource):
 
 @api.route('/soogikorrad/seisundid')
 class SoogikorraSeisundid(Resource):
+    @auth.login_required
     def get(self):
         db = PGDatabase()
         db.execute("""SELECT soogikorra_seisundi_liik_kood as kood, nimetus, COALESCE(kirjeldus, 'puudub') as kirjeldus from Soogikorra_seisundi_liik;""", "")
@@ -108,6 +124,7 @@ class SoogikorraSeisundid(Resource):
 
 @api.route('/soogikorrad/liigid')
 class SoogikorraLiigid(Resource):
+    @auth.login_required
     def get(self):
         db = PGDatabase()
         db.execute("""SELECT soogikorra_liik_kood as kood, nimetus, COALESCE(kirjeldus, 'puudub') as kirjeldus from Soogikorra_liik;""", "")
@@ -118,6 +135,7 @@ class SoogikorraLiigid(Resource):
 @api.route('/soogikorrad/<int:soogikorra_id>')
 class Soogikord(Resource):
 
+    @auth.login_required
     @api.marshal_with(soogikord)
     def get(self, soogikorra_id):
 
@@ -131,6 +149,7 @@ class Soogikord(Resource):
         db.close()
         return soogikord
 
+    @auth.login_required
     @api.expect(muudetavSoogikord)
     def put(self, soogikorra_id):
         # Andmete lugemine PUT sõnumist
@@ -167,6 +186,8 @@ class Soogikord(Resource):
 
 @api.route('/soogikorrad/<int:soogikorra_id>/registreerimised')
 class SoogikorraRegistreerimised(Resource):
+
+    @auth.login_required
     def get(self, soogikorra_id):
 
         db = PGDatabase()
@@ -221,26 +242,29 @@ class SoogikorraRegistreerimised(Resource):
 
 @api.route('/opilased')
 class Opilased(Resource):
+
+    @auth.login_required
     def get(self):
         db = PGDatabase()
-        db.execute("""SELECT ok.opilase_id, ok.eesnimi, ok.perekonnanimi, ok.klass FROM Opilaste_koondtabel ok;""", "")
+        db.execute("""SELECT ok.isikukood, ok.eesnimi, ok.perekonnanimi, ok.klass FROM Opilaste_koondtabel ok
+                        ORDER BY ok.klass;""", "")
         opilased = db.getRecords()
         db.close
         return opilased
 
 class Opilane(Resource):
-    def get(self, id):
+    def get(self, isikukood):
         db = PGDatabase()
-        db.execute("""SELECT ok.opilase_id, ok.eesnimi, ok.perekonnanimi, ok.klass FROM Opilaste_koondtabel ok
-                    WHERE ok.opilase_id=%s;""", (id, ))
+        db.execute("""SELECT ok.isikukood, ok.eesnimi, ok.perekonnanimi, ok.klass FROM Opilaste_koondtabel ok
+                    WHERE ok.isikukood=%s;""", (isikukood, ))
         opilane = db.getRecords()
         db.close
         return opilane
 
 @api.route('/opilased/registreerimised')
-
 class OpilasteRegistreerimised(Resource):
 
+    @auth.login_required
     def get(self):
 
         try:
@@ -260,10 +284,10 @@ class OpilasteRegistreerimised(Resource):
 
         for opilane in opilased:
             db.execute("""SELECT ork.nimetus, COUNT(*) as registreerimisi
-                          FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.opilase_id = %s
+                          FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
                           AND kuupaev BETWEEN %s AND %s
                           GROUP BY ork.nimetus
-                          ORDER BY ork.nimetus LIMIT 100 """, (opilane['opilase_id'], alguseKuupaev, lopuKuupaev))
+                          ORDER BY ork.nimetus LIMIT 100 """, (opilane['isikukood'], alguseKuupaev, lopuKuupaev))
             soogikorrad = db.getRecords()
             opilane['registreerimised'] = soogikorrad
             opilasteRegistreerimised.append(opilane)
@@ -271,11 +295,11 @@ class OpilasteRegistreerimised(Resource):
         db.close()
         return opilasteRegistreerimised
 
-@api.route('/opilased/<int:opilase_id>/registreerimised')
-# Inherit from Resource
+@api.route('/opilased/<string:isikukood>/registreerimised')
 class OpilaseRegistreerimised(Resource):
 
-    def get(self, opilase_id):
+    @auth.login_required
+    def get(self, isikukood):
 
         try:
             alguseKuupaev = request.args.get('alguse-kuupaev')
@@ -287,16 +311,16 @@ class OpilaseRegistreerimised(Resource):
         except:
             lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%Y-%m-%d')
 
-        opilane = Opilane.get(self, opilase_id)
+        opilane = Opilane.get(self, isikukood)
 
         opilaseRegistreerimised = opilane[0]
 
         db = PGDatabase()
 
         db.execute("""SELECT ork.soogikorra_id, ork.nimetus, to_char(ork.kuupaev, 'DD.MM.YYYY') as kuupäev
-                      FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.opilase_id = %s
+                      FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
                       AND kuupaev BETWEEN %s AND %s
-                      ORDER BY ork.kuupaev, ork.soogikorra_id LIMIT 100 """, (opilase_id, alguseKuupaev, lopuKuupaev))
+                      ORDER BY ork.kuupaev, ork.soogikorra_id LIMIT 100 """, (isikukood, alguseKuupaev, lopuKuupaev))
         soogikorrad = db.getRecords()
 
         db.close()
@@ -305,6 +329,7 @@ class OpilaseRegistreerimised(Resource):
 
         return opilaseRegistreerimised
 
+    @auth.login_required
     # Informatsiooni valideerimine
     @api.expect(opilaseSoogikorrad, validate=True)
     def post(self):
@@ -318,18 +343,32 @@ class OpilaseRegistreerimised(Resource):
         # Õpilase ID pärimine kasutades UID, LISADA kontroll, kas õpilase staatus on kehtiv (andmebaasi), või pärida vaadet, kus on kõik aktiivsed õpilased
         db.execute("""SELECT opilane_ID FROM Opilane WHERE UID= %s ;""", (uid,))
         records = db.getRecords()
-        # LISADA: Kontrolli, kas tagastatakse ID, kui ei, siis sellise UID-ga õpilast ei ole. Sulge ühendus.
-        opilase_id = records[0]['opilane_id']
+        # LISADA: Kontrolli, kas tagastatakse isikukood, kui ei, siis sellise UID-ga õpilast ei ole. Sulge ühendus.
+        isikukood = records[0]['isikukood']
 
         # Andmete sisestamine Andmebaasi
         for soogikord in soogikorrad:
-            db.execute("""INSERT INTO Opilase_soogikorrad (soogikorra_ID, opilane_ID, registreerimise_kuupaev) VALUES (%s, %s, %s);""",
-            (soogikord['soogikorra_id'], opilase_id, datetime.date.today() ))
+            db.execute("""INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (%s, %s, %s);""",
+            (soogikord['soogikorra_id'], isikukood, datetime.date.today() ))
 
         # Andmete kinnitamine
         db.commit()
         # Ühenduse sulgemine
         db.close()
+
+@api.route('/autentimine')
+class Autentimine(Resource):
+    @api.expect(kasutajaAndmed, validate=True)
+    def post(self):
+        content = request.json
+        kasutajatunnus = content['kasutajatunnus']
+        parool = content['parool']
+        db = PGDatabase()
+        db.execute("""SELECT f_on_majandusala_juhataja(%s, %s) as success;""", (kasutajatunnus, parool))
+        result = db.getRecords()
+        if result[0]['success']:
+            return Response('Juurdepääs lubatud', 202)
+        return Response('Vale parool ja/või kasutajatunnus', 401)
 
 if __name__ == '__main__':
     app.run()
