@@ -1,4 +1,4 @@
-DROP VIEW IF EXISTS Soogikorrad_klasside_registreerimised CASCADE;
+﻿DROP VIEW IF EXISTS Soogikorrad_klasside_registreerimised CASCADE;
 DROP VIEW IF EXISTS Opilaste_registreerimiste_koondtabel CASCADE;
 DROP VIEW IF EXISTS Opilaste_registreerimised CASCADE;
 DROP VIEW IF EXISTS Soogikordade_koondtabel CASCADE;
@@ -36,6 +36,7 @@ DROP INDEX IF EXISTS IDX_klass_klassi_seisundi_liik_kood;
 DROP INDEX IF EXISTS IDX_klass_isikukood;
 DROP INDEX IF EXISTS IDX_klass_soojate_grupp_kood;
 
+DROP TABLE IF EXISTS Isik CASCADE;
 DROP TABLE IF EXISTS Soogikorra_liik CASCADE;
 DROP TABLE IF EXISTS Opilane;
 DROP TABLE IF EXISTS Kooliaste;
@@ -194,7 +195,7 @@ ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_klass_ID FOREIGN KEY (klass_ID) RE
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_opilase_seisundi_liik_kood FOREIGN KEY (opilase_seisundi_liik_kood) REFERENCES Opilase_seisundi_liik (opilase_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilase_soogikorrad ADD CONSTRAINT FK_opilase_soogikorrad_isikukood FOREIGN KEY (isikukood) REFERENCES Opilane (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilase_soogikorrad ADD CONSTRAINT FK_opilase_soogikorrad_soogikorra_ID FOREIGN KEY (soogikorra_ID) REFERENCES Soogikord (soogikorra_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_amet_id FOREIGN KEY (amet_kood) REFERENCES Amet (amet_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_amet_kood FOREIGN KEY (amet_kood) REFERENCES Amet (amet_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_isikukood FOREIGN KEY (isikukood) REFERENCES Isik (isikukood) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_tootaja_seisundi_liik_kood FOREIGN KEY (tootaja_seisundi_liik_kood) REFERENCES Tootaja_seisundi_liik (tootaja_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -322,7 +323,7 @@ INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VA
 -- Nimed genereeritud tööriistaga http://namegenerators.org/estonian-male-name-generator-ee/
 INSERT INTO Isik (isikukood, eesnimi, perekonnanimi) VALUES ('38001010014', 'Eino', 'Öpik');
 
-INSERT INTO Tootaja (isikukood, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'eino.opik@epost.ee', 'Trustno1', 1);
+INSERT INTO Tootaja (isikukood, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'eino.opik@epost.ee', 'Tal.Hel.Sto', 1);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 1219);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 2341);
 

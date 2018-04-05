@@ -114,7 +114,6 @@ class Soogikorrad(Resource):
 
 @api.route('/soogikorrad/seisundid')
 class SoogikorraSeisundid(Resource):
-    @auth.login_required
     def get(self):
         db = PGDatabase()
         db.execute("""SELECT soogikorra_seisundi_liik_kood as kood, nimetus, COALESCE(kirjeldus, 'puudub') as kirjeldus from Soogikorra_seisundi_liik;""", "")
@@ -124,7 +123,6 @@ class SoogikorraSeisundid(Resource):
 
 @api.route('/soogikorrad/liigid')
 class SoogikorraLiigid(Resource):
-    @auth.login_required
     def get(self):
         db = PGDatabase()
         db.execute("""SELECT soogikorra_liik_kood as kood, nimetus, COALESCE(kirjeldus, 'puudub') as kirjeldus from Soogikorra_liik;""", "")
