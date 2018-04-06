@@ -157,7 +157,7 @@ CREATE TABLE Amet (
 CREATE TABLE Soogikord (
 	soogikorra_ID SERIAL NOT NULL,
 	isikukood VARCHAR ( 11 ) NOT NULL,
-	soogikorra_seisundi_liik_kood SMALLINT NOT NULL,
+	soogikorra_seisundi_liik_kood SMALLINT DEFAULT 2 NOT NULL,
 	soogikorra_liik_kood SMALLINT NOT NULL,
 	kuupaev DATE NOT NULL,
 	vaikimisi BOOLEAN NOT NULL,
@@ -425,3 +425,21 @@ SET search_path = public, pg_temp;
 COMMENT ON FUNCTION f_on_majandusala_juhataja(text, text) IS
 'Selle funktsiooni abil autenditakse majandusala juhataja. Funktsiooni väljakutsel on esimene argument e-post ja teine
 argument parool. Juhtkonna liikmel on õigus süsteemi siseneda, vaid siis kui tema seisundiks on aktiivne';
+
+CREATE OR REPLACE FUNCTION f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE)
+RETURNS VOID AS $$
+UPDATE Soogikord SET soogikorra_seisundi_liik_kood = 3 WHERE kuupaev=$1;
+$$ LANGUAGE sql SECURITY DEFINER
+SET search_path = public, pg_temp;
+COMMENT ON FUNCTION f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE) IS
+'Selle funktsiooni abil avatakse söögikorra registreerimine. Funktsioon realiseerib andmebaasioperatsiooni
+OP __';
+
+CREATE OR REPLACE FUNCTION f_sulge_soogikorra_registreerimine(soogikord.kuupaev%TYPE)
+RETURNS VOID AS $$
+UPDATE Soogikord SET soogikorra_seisundi_liik_kood = 4 WHERE kuupaev=$1;
+$$ LANGUAGE sql SECURITY DEFINER
+SET search_path = public, pg_temp;
+COMMENT ON FUNCTION f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE) IS
+'Selle funktsiooni abil suletakse söögikorra registreerimine. Funktsioon realiseerib andmebaasioperatsiooni
+OP __';

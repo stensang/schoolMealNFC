@@ -22,7 +22,6 @@ app.debug = True
 
 # Payload marshalling
 muudetavSoogikord = api.model('Muudetav söögikord', {
-    'seisund' : fields.Integer('Söögikorra seisund (nt "arhiveeritud", "koostamisel", "kinnitatud", "registreerimine avatud", "registreerimine suletud")'),
     'liik' : fields.Integer ('Söögikorra liik (nt 1-hommikusöök, 2-lõunasöök, 3-lisaeine)'),
     'kuupäev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
     'vaikimisi' : fields.String ('Kas söögikord on vaikimisi valik? (nt "True"/"False")'),
@@ -30,7 +29,7 @@ muudetavSoogikord = api.model('Muudetav söögikord', {
 })
 
 soogikord = api.inherit('Söögikord', muudetavSoogikord, {
-    'isikukood' : fields.String('Söögikorra lisaja isikukood (nt "38001010014")'),
+    'kasutajatunnus' : fields.String('Söögikorra lisaja kasutajatunnus'),
 })
 
 avatudSoogikorrad = api.model('Registreerimiseks avatud söögikorrad', {
@@ -73,19 +72,19 @@ class Soogikorrad(Resource):
 
         if seisund is not None:
             db.execute("""
-                        SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                        SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'YYYY-MM-DD') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                         FROM soogikordade_koondtabel sk
                         WHERE seisund = %s
                         ORDER BY kuupäev LIMIT 30;""", (seisund,))
         else:
             db.execute("""
-                        SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                        SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'YYYY-MM-DD') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                         FROM soogikordade_koondtabel sk
                         ORDER BY kuupäev LIMIT 100;""", ("",))
 
         soogikorrad = db.getRecords()
         db.close()
-        # No need for jsonify, flask_restplus assumes you return json
+
         return soogikorrad
 
     @auth.login_required
@@ -94,19 +93,18 @@ class Soogikorrad(Resource):
         # Andmete lugemine POST sõnumist
         content = request.json
 
-        isikukood = content['isikukood']
-        soogikorra_seisundi_liik_kood = content['seisund']
+        kasutajatunnus = content['kasutajatunnus']
         soogikorra_liik_kood = content['liik']
         kuupaev = content['kuupäev']
         vaikimisi = content['vaikimisi']
         kirjeldus = content['kirjeldus']
 
         db = PGDatabase()
-        # Teha sisestus läbi PostgreSQL-i vaate (view)
+
         db.execute("""
-                    INSERT INTO Soogikord (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus)
-                    VALUES (%s, %s, %s, %s, %s, %s);""",
-                    (isikukood, soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus))
+                    INSERT INTO Soogikord (isikukood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus)
+                    VALUES ((SELECT isikukood FROM tootaja WHERE epost=%s), %s, %s, %s, %s);""",
+                    (kasutajatunnus, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus))
         db.commit()
         db.close()
 
@@ -134,18 +132,17 @@ class SoogikorraLiigid(Resource):
 class Soogikord(Resource):
 
     @auth.login_required
-    @api.marshal_with(soogikord)
     def get(self, soogikorra_id):
 
         db = PGDatabase()
         db.execute("""
-                    SELECT sk.soogikorra_id, sk.isikukood, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
-                    FROM soogikordade_koondtabel sk
+                    SELECT sk.soogikorra_id, t.epost as lisas, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                    FROM soogikordade_koondtabel sk INNER JOIN tootaja t ON sk.isikukood = t.isikukood
                     WHERE soogikorra_id = %s;""", (soogikorra_id,))
 
         soogikord = db.getRecords()
         db.close()
-        return soogikord
+        return soogikord[0]
 
     @auth.login_required
     @api.expect(muudetavSoogikord)
@@ -160,16 +157,15 @@ class Soogikord(Resource):
         kirjeldus = content['kirjeldus']
 
         db = PGDatabase()
-        # Teha sisestus läbi PostgreSQL-i vaate (view)
+
         db.execute("""
                     UPDATE Soogikord SET
-                    soogikorra_seisundi_liik_kood = %s,
                     soogikorra_liik_kood = %s,
                     kuupaev = %s,
                     vaikimisi = %s,
                     kirjeldus = %s
                     WHERE soogikorra_id = %s;""",
-                    (soogikorra_seisundi_liik_kood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus, soogikorra_id))
+                    (soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus, soogikorra_id))
         db.commit()
         db.close()
 

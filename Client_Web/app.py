@@ -24,24 +24,18 @@ def on_sisselogitud(f):
             return redirect('/sisselogimine')
     return wrap
 
-class SoogikorraMuutmiseVorm(FlaskForm):
-    seisundid = requests.get('http://127.0.0.1:5000/soogikorrad/seisundid')
-    seisundid_dict = seisundid.json()
+class SoogikorraVorm(FlaskForm):
     liigid = requests.get('http://127.0.0.1:5000/soogikorrad/liigid')
     liigid_dict = liigid.json()
 
     # https://wtforms.readthedocs.io/en/stable/crash_course.html#download-installation
-    seisund = SelectField('Seisund', coerce=int, choices=[(seisund['kood'], seisund['nimetus']) for seisund in seisundid_dict])
     liik = SelectField('Liik', coerce=int, choices=[(liik['kood'], liik['nimetus']) for liik in liigid_dict])
-    kuupaev = DateField('Kuupäev')
+    kuupaev = StringField('Kuupäev')
     kirjeldus = TextAreaField('Kirjeldus')
 
-class SoogikorraSisestamiseVorm(SoogikorraMuutmiseVorm):
-    isikukood = StringField('Isikukood')
-
 class KuupaevaVahemikuVorm(FlaskForm):
-    algusekuupaev = DateField('Alguse kuupäev')
-    lopukuupaev = DateField('Lõpu kuupäev')
+    algusekuupaev = StringField('Alguse kuupäev')
+    lopukuupaev = StringField('Lõpu kuupäev')
 
 class SisselogimiseVorm(FlaskForm):
     kasutajatunnus = StringField('E-mail')
@@ -54,22 +48,21 @@ def soogikorrad():
     andmed = requests.get('http://127.0.0.1:5000/soogikorrad', auth=(session['kasutaja'], session['parool']))
     return render_template('soogikorrad.html', soogikorrad=andmed.json())
 
-@app.route('/soogikorrad/lisa', methods = ('GET', 'POST'))
+@app.route('/soogikorrad/lisa', methods = ['GET', 'POST'])
 @on_sisselogitud
 def lisaSoogikord():
 
-    vorm = SoogikorraSisestamiseVorm()
+    vorm = SoogikorraVorm()
 
     if vorm.validate_on_submit():
 
         payload = {}
-        payload['isikukood'] = vorm.isikukood.data
-        payload['seisund'] = vorm.seisund.data
+        payload['kasutajatunnus'] = session['kasutaja']
         payload['liik'] = vorm.liik.data
-        payload['kuupäev'] = '{:%Y-%m-%d}'.format(vorm.kuupaev.data)
+        payload['kuupäev'] = datetime.datetime.strptime(vorm.kuupaev.data, '%d.%m.%Y').strftime('%Y-%m-%d')
         payload['vaikimisi'] = 'True' if vorm.liik.data == 2 else 'False'
         payload['kirjeldus'] = vorm.kirjeldus.data
-        # print(payload)
+        print(payload)
         request = requests.post('http://127.0.0.1:5000/soogikorrad', auth=(session['kasutaja'], session['parool']), json = payload)
 
         return redirect('/')
@@ -83,25 +76,33 @@ def soogikorraRegistreerimised(id="1"):
     andmed = requests.get('http://127.0.0.1:5000/soogikorrad/' + id + '/registreerimised', auth=(session['kasutaja'], session['parool']))
     return render_template('soogikorra-registreerimised.html', soogikorraAndmed=andmed.json())
 
-@app.route('/soogikorrad/muuda/<string:id>', methods = ['POST'])
+@app.route('/soogikorrad/muuda/<string:id>', methods = ['GET', 'POST'])
 @on_sisselogitud
 def muudaSoogikord(id):
 
-    vorm = SoogikorraMuutmiseVorm()
+    vorm = SoogikorraVorm()
+
+    andmed = requests.get('http://127.0.0.1:5000/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']))
+    print(andmed)
+
     if vorm.validate_on_submit():
 
         payload = {}
-        payload['seisund'] = vorm.seisund.data
         payload['liik'] = vorm.liik.data
-        payload['kuupäev'] = '{:%Y-%m-%d}'.format(vorm.kuupaev.data)
+        try:
+            payload['kuupäev'] = datetime.datetime.strptime(vorm.kuupaev.data, '%d.%m.%Y').strftime('%Y-%m-%d')
+        except:
+            payload['kuupäev'] = vorm.kuupaev.data
         payload['vaikimisi'] = 'True' if vorm.liik.data == 2 else 'False'
         payload['kirjeldus'] = vorm.kirjeldus.data
-        request = requests.put('http://127.0.0.1:5000/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']), json = payload)
+        request = requests.put('http://127.0.0.1:5000/soogikorrad/' + id,
+        auth=(session['kasutaja'], session['parool']),
+        json = payload)
 
         return redirect('/')
 
     print(vorm.errors)
-    return render_template('soogikorra-muutmine.html', vorm=vorm, id=id)
+    return render_template('soogikorra-muutmine.html', vorm=vorm, id=id, soogikorraAndmed=andmed.json())
 
 @app.route('/soogikorrad/kustuta/<string:id>', methods = ['POST'])
 @on_sisselogitud
@@ -146,7 +147,10 @@ def opilaseRegistreerimised(id):
     if lopuKuupaev is None:
         lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%d.%m.%Y')
 
-    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised?alguse-kuupaev=' + alguseKuupaev + '&lopu-kuupaev=' + lopuKuupaev, auth=(session['kasutaja'], session['parool']))
+    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised?alguse-kuupaev='
+    + datetime.datetime.strptime(alguseKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d')
+    + '&lopu-kuupaev=' + datetime.datetime.strptime(lopuKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d'),
+    auth=(session['kasutaja'], session['parool']))
 
     return render_template('opilase-registreerimised.html', opilaseAndmed=andmed.json(), vorm=vorm,
     alguseKuupaev=alguseKuupaev, lopuKuupaev = lopuKuupaev)

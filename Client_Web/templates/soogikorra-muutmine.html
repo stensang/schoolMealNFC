@@ -9,16 +9,18 @@
 
         {{ vorm.csrf_token }}
         <div class="form-group">
-          <div>{{ vorm.seisund.label }}: {{ vorm.seisund(class="form-control") }}</div>
+        {{ vorm.liik.label }}:
+          <div class="col-md-3">{{ vorm.liik(class="form-control", value=soogikorraAndmed['nimetus']) }}</div>
         </div>
         <div class="form-group">
-          <div>{{ vorm.liik.label }}: {{ vorm.liik(class="form-control") }}</div>
+            {{  vorm.kuupaev.label }}:
+          <div class="input-daterange input-group col-md-3" id="datepicker">
+            {{ vorm.kuupaev(class="input-sm form-control", type="text", value=soogikorraAndmed['kuupäev']) }}
+          </div>
         </div>
         <div class="form-group">
-          <div>{{ vorm.kuupaev.label }}: {{ vorm.kuupaev(class="form-control", type="date", value="2018-02-02") }}</div>
-        </div>
-        <div class="form-group">
-          <div>{{  vorm.kirjeldus.label }}: {{ vorm.kirjeldus(class="form-control") }}</div>
+        {{  vorm.kirjeldus.label }}:
+          <div class=col-md-6>{{ vorm.kirjeldus(class="form-control", value=soogikorraAndmed['kirjeldus']) }}</div>
         </div>
         <input type="submit" class="btn btn-success" value="Muuda">
         <a href="/" role="button" class="btn btn-warning">Tühista</a>
