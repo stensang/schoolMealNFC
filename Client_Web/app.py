@@ -122,7 +122,11 @@ def opilasteRegistreerimised():
     if lopuKuupaev is None:
         lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%d.%m.%Y')
 
-    opilasteAndmed = requests.get('http://127.0.0.1:5000/opilased/registreerimised?alguse-kuupaev=' + alguseKuupaev + '&lopu-kuupaev=' + lopuKuupaev, auth=('eino.opik@epost.ee', 'Trustno1'))
+    opilasteAndmed = requests.get('http://127.0.0.1:5000/opilased/registreerimised?alguse-kuupaev='
+    + datetime.datetime.strptime(alguseKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d')
+    + '&lopu-kuupaev=' + datetime.datetime.strptime(lopuKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d'),
+    auth=(session['kasutaja'], session['parool']))
+
     soogikorraAndmed = requests.get('http://127.0.0.1:5000/soogikorrad/liigid', auth=(session['kasutaja'], session['parool']))
 
     return render_template('opilaste-registreerimised.html', opilased=opilasteAndmed.json(), soogikorraLiigid=soogikorraAndmed.json(), vorm=vorm,
@@ -142,7 +146,7 @@ def opilaseRegistreerimised(id):
     if lopuKuupaev is None:
         lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%d.%m.%Y')
 
-    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised?alguse-kuupaev=' + alguseKuupaev + '&lopu-kuupaev=' + lopuKuupaev, auth=('eino.opik@epost.ee', 'Trustno1'))
+    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised?alguse-kuupaev=' + alguseKuupaev + '&lopu-kuupaev=' + lopuKuupaev, auth=(session['kasutaja'], session['parool']))
 
     return render_template('opilase-registreerimised.html', opilaseAndmed=andmed.json(), vorm=vorm,
     alguseKuupaev=alguseKuupaev, lopuKuupaev = lopuKuupaev)
