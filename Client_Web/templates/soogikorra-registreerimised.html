@@ -4,7 +4,7 @@
 
 <div class="container">
     <h1 class="display-3">Koondandmed</h1>
-    <h2 class="display-4 meal-heading">{{ soogikorraAndmed['nimetus'] + " " + soogikorraAndmed['kuupäev'] }}</h2>
+    <h2 class="display-4 meal-heading">{{ soogikorraAndmed['liik'] + " " + soogikorraAndmed['kuupäev'] }}</h2>
     <div class="row">
       {% for sööjate_grupp in soogikorraAndmed['registreerimised'] %}
         <div class="col-md-4">

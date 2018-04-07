@@ -43,7 +43,7 @@
                   {% for liik in soogikorraLiigid | sort(attribute='kood') %}
                       <td scope="col">
                         {% for registreerimine in opilane['registreerimised'] %}
-                          {% if liik['nimetus'] == registreerimine['nimetus'] %} {{registreerimine['registreerimisi']}} {% endif %}
+                          {% if liik['nimetus'] == registreerimine['liik'] %} {{registreerimine['registreerimisi']}} {% endif %}
                         {% endfor %}
                       </td>
                   {% endfor %}

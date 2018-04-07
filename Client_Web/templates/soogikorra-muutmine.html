@@ -10,7 +10,7 @@
         {{ vorm.csrf_token }}
         <div class="form-group">
         {{ vorm.liik.label }}:
-          <div class="col-md-3">{{ vorm.liik(class="form-control", value=soogikorraAndmed['nimetus']) }}</div>
+          <div class="col-md-3">{{ vorm.liik(class="form-control", value=soogikorraAndmed['liik']) }}</div>
         </div>
         <div class="form-group">
             {{  vorm.kuupaev.label }}:
@@ -20,7 +20,8 @@
         </div>
         <div class="form-group">
         {{  vorm.kirjeldus.label }}:
-          <div class=col-md-6>{{ vorm.kirjeldus(class="form-control", value=soogikorraAndmed['kirjeldus']) }}</div>
+        {% set f = vorm.kirjeldus.process_data(soogikorraAndmed['kirjeldus']) %}
+          <div class=col-md-6>{{ vorm.kirjeldus(class="form-control") }}</div>
         </div>
         <input type="submit" class="btn btn-success" value="Muuda">
         <a href="/" role="button" class="btn btn-warning">Tühista</a>

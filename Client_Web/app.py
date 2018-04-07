@@ -29,7 +29,7 @@ class SoogikorraVorm(FlaskForm):
     liigid_dict = liigid.json()
 
     # https://wtforms.readthedocs.io/en/stable/crash_course.html#download-installation
-    liik = SelectField('Liik', coerce=int, choices=[(liik['kood'], liik['nimetus']) for liik in liigid_dict])
+    liik = SelectField('Liik', choices=[(liik['nimetus'], liik['nimetus']) for liik in liigid_dict])
     kuupaev = StringField('Kuupäev')
     kirjeldus = TextAreaField('Kirjeldus')
 
@@ -80,10 +80,11 @@ def soogikorraRegistreerimised(id="1"):
 @on_sisselogitud
 def muudaSoogikord(id):
 
-    vorm = SoogikorraVorm()
-
     andmed = requests.get('http://127.0.0.1:5000/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']))
-    print(andmed)
+    soogikorraAndmed = andmed.json()
+    # vorm.kirjeldus.data = soogikorraAndmed['kirjeldus']
+
+    vorm = SoogikorraVorm(liik=soogikorraAndmed['liik'])
 
     if vorm.validate_on_submit():
 
@@ -95,14 +96,14 @@ def muudaSoogikord(id):
             payload['kuupäev'] = vorm.kuupaev.data
         payload['vaikimisi'] = 'True' if vorm.liik.data == 2 else 'False'
         payload['kirjeldus'] = vorm.kirjeldus.data
-        request = requests.put('http://127.0.0.1:5000/soogikorrad/' + id,
-        auth=(session['kasutaja'], session['parool']),
-        json = payload)
+
+        print(payload)
+        request = requests.put('http://127.0.0.1:5000/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']), json = payload)
 
         return redirect('/')
 
     print(vorm.errors)
-    return render_template('soogikorra-muutmine.html', vorm=vorm, id=id, soogikorraAndmed=andmed.json())
+    return render_template('soogikorra-muutmine.html', vorm=vorm, id=id, soogikorraAndmed=soogikorraAndmed)
 
 @app.route('/soogikorrad/kustuta/<string:id>', methods = ['POST'])
 @on_sisselogitud

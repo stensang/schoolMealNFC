@@ -22,7 +22,7 @@ app.debug = True
 
 # Payload marshalling
 muudetavSoogikord = api.model('Muudetav söögikord', {
-    'liik' : fields.Integer ('Söögikorra liik (nt 1-hommikusöök, 2-lõunasöök, 3-lisaeine)'),
+    'liik' : fields.String ('Söögikorra liik (nt Hommikusöök, Lõunasöök, Lisaeine)'),
     'kuupäev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
     'vaikimisi' : fields.String ('Kas söögikord on vaikimisi valik? (nt "True"/"False")'),
     'kirjeldus' : fields.String ('Söögikorra kirjeldus (nt "Väga maitsev")'),
@@ -72,13 +72,13 @@ class Soogikorrad(Resource):
 
         if seisund is not None:
             db.execute("""
-                        SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'YYYY-MM-DD') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                        SELECT sk.soogikorra_id, sk.nimetus as liik, to_char(sk.kuupaev, 'YYYY-MM-DD') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                         FROM soogikordade_koondtabel sk
                         WHERE seisund = %s
                         ORDER BY kuupäev LIMIT 30;""", (seisund,))
         else:
             db.execute("""
-                        SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'YYYY-MM-DD') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                        SELECT sk.soogikorra_id, sk.nimetus as liik, to_char(sk.kuupaev, 'YYYY-MM-DD') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                         FROM soogikordade_koondtabel sk
                         ORDER BY kuupäev LIMIT 100;""", ("",))
 
@@ -94,7 +94,7 @@ class Soogikorrad(Resource):
         content = request.json
 
         kasutajatunnus = content['kasutajatunnus']
-        soogikorra_liik_kood = content['liik']
+        soogikorra_liik_nimetus = content['liik']
         kuupaev = content['kuupäev']
         vaikimisi = content['vaikimisi']
         kirjeldus = content['kirjeldus']
@@ -103,8 +103,10 @@ class Soogikorrad(Resource):
 
         db.execute("""
                     INSERT INTO Soogikord (isikukood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus)
-                    VALUES ((SELECT isikukood FROM tootaja WHERE epost=%s), %s, %s, %s, %s);""",
-                    (kasutajatunnus, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus))
+                    VALUES
+                    ((SELECT isikukood FROM tootaja WHERE epost=%s),
+                    (SELECT soogikorra_liik_kood FROM soogikorra_liik WHERE nimetus=%s), %s, %s, %s);""",
+                    (kasutajatunnus, soogikorra_liik_nimetus, kuupaev, vaikimisi, kirjeldus))
         db.commit()
         db.close()
 
@@ -136,7 +138,7 @@ class Soogikord(Resource):
 
         db = PGDatabase()
         db.execute("""
-                    SELECT sk.soogikorra_id, t.epost as lisas, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                    SELECT sk.soogikorra_id, t.epost as lisas, sk.nimetus as liik, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                     FROM soogikordade_koondtabel sk INNER JOIN tootaja t ON sk.isikukood = t.isikukood
                     WHERE soogikorra_id = %s;""", (soogikorra_id,))
 
@@ -150,8 +152,7 @@ class Soogikord(Resource):
         # Andmete lugemine PUT sõnumist
         content = request.json
 
-        soogikorra_seisundi_liik_kood = content['seisund']
-        soogikorra_liik_kood = content['liik']
+        soogikorra_liik_nimetus = content['liik']
         kuupaev = content['kuupäev']
         vaikimisi = content['vaikimisi']
         kirjeldus = content['kirjeldus']
@@ -160,12 +161,12 @@ class Soogikord(Resource):
 
         db.execute("""
                     UPDATE Soogikord SET
-                    soogikorra_liik_kood = %s,
+                    soogikorra_liik_kood = (SELECT soogikorra_liik_kood FROM soogikorra_liik WHERE nimetus=%s),
                     kuupaev = %s,
                     vaikimisi = %s,
                     kirjeldus = %s
                     WHERE soogikorra_id = %s;""",
-                    (soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus, soogikorra_id))
+                    (soogikorra_liik_nimetus, kuupaev, vaikimisi, kirjeldus, soogikorra_id))
         db.commit()
         db.close()
 
@@ -186,7 +187,7 @@ class SoogikorraRegistreerimised(Resource):
 
         db = PGDatabase()
         db.execute("""
-                    SELECT sk.soogikorra_id, sk.nimetus, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
+                    SELECT sk.soogikorra_id, sk.nimetus as liik, to_char(sk.kuupaev, 'DD.MM.YYYY') as kuupäev, sk.kirjeldus, sk.vaikimisi, sk.seisund
                     FROM soogikordade_koondtabel sk
                     WHERE soogikorra_id = %s;""", (soogikorra_id,))
 
@@ -277,7 +278,7 @@ class OpilasteRegistreerimised(Resource):
         db = PGDatabase()
 
         for opilane in opilased:
-            db.execute("""SELECT ork.nimetus, COUNT(*) as registreerimisi
+            db.execute("""SELECT ork.nimetus as liik, COUNT(*) as registreerimisi
                           FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
                           AND kuupaev BETWEEN %s AND %s
                           GROUP BY ork.nimetus
@@ -311,7 +312,7 @@ class OpilaseRegistreerimised(Resource):
 
         db = PGDatabase()
 
-        db.execute("""SELECT ork.soogikorra_id, ork.nimetus, to_char(ork.kuupaev, 'DD.MM.YYYY') as kuupäev
+        db.execute("""SELECT ork.soogikorra_id, ork.nimetus as liik, to_char(ork.kuupaev, 'DD.MM.YYYY') as kuupäev
                       FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
                       AND kuupaev BETWEEN %s AND %s
                       ORDER BY ork.kuupaev, ork.soogikorra_id LIMIT 100 """, (isikukood, alguseKuupaev, lopuKuupaev))
