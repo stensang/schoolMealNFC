@@ -261,7 +261,9 @@ SELECT
 	o.isikukood,
 	i.eesnimi,
 	i.perekonnanimi,
-	k.nimetus as klass
+	k.nimetus as klass,
+	o.opilase_seisundi_liik_kood,
+	o.uid
 FROM opilane o
 		INNER JOIN Isik i ON o.isikukood = i.isikukood
 		INNER JOIN Klass k ON o.klass_id = k.klass_id
@@ -370,8 +372,8 @@ INSERT INTO Isik (isikukood, eesnimi, perekonnanimi) VALUES ('50305155150', 'Ren
 INSERT INTO Isik (isikukood, eesnimi, perekonnanimi) VALUES ('60306166160', 'Helga', 'Kotka');
 
 INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('51101011010', '13213021943240', 1, 1);
-INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('61102022020', '13213021943241', 1, 1);
-INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('51003033030', '13213021943242', 1, 2);
+INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('61102022020', '84:82:db:2b', 1, 1);
+INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('51003033030', 'f3:b3:e7:2b', 1, 2);
 INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('61004044040', '13213021943243', 1, 2);
 INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('50905055050', '13213021943244', 1, 3);
 INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('60906066060', '13213021943245', 1, 3);

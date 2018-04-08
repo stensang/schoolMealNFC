@@ -290,6 +290,45 @@ class OpilasteRegistreerimised(Resource):
         db.close()
         return opilasteRegistreerimised
 
+    @auth.login_required
+    # Informatsiooni valideerimine
+    @api.expect(opilaseSoogikorrad, validate=True)
+    def post(self):
+        # Andmete lugemine POST sõnumist
+        content = request.json
+        uid = content['uid']
+        soogikorrad = content['soogikorrad']
+
+        # Andmebaasi   henduse avamine
+        db = PGDatabase()
+        db.execute("""SELECT isikukood FROM Opilaste_koondtabel WHERE UID=%s AND opilase_seisundi_liik_kood=1;""", (uid,))
+        records = db.getRecords()
+        try:
+            isikukood = records[0]['isikukood']
+        except:
+            db.close()
+            return Response('Tundmatu kaart!', 403)
+
+        for soogikord in soogikorrad:
+            try:
+                db.execute("""INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (%s, %s, %s);""",
+                (soogikord['soogikorra_id'], isikukood, datetime.date.today() ))
+            except Exception as e:
+
+                if e.pgcode == '23505':
+                    soogikorraAndmed = Soogikord.get(self, soogikord['soogikorra_id'])
+                    soogikord = soogikorraAndmed['liik']
+                    return Response(soogikord + ' on juba registreeritud', 400)
+                else:
+                    return Response('Tundmatu viga', 400)
+
+        # Andmete kinnitamine
+        db.commit()
+        # Ühenduse sulgemine
+        db.close()
+
+        return Response('Söögikorra registreerimine õnnestus!', 201)
+
 @api.route('/opilased/<string:isikukood>/registreerimised')
 class OpilaseRegistreerimised(Resource):
 
@@ -323,33 +362,6 @@ class OpilaseRegistreerimised(Resource):
         opilaseRegistreerimised['registreerimised'] = soogikorrad
 
         return opilaseRegistreerimised
-
-    @auth.login_required
-    # Informatsiooni valideerimine
-    @api.expect(opilaseSoogikorrad, validate=True)
-    def post(self):
-        # Andmete lugemine POST sõnumist
-        content = request.json
-        uid = content['uid']
-        soogikorrad = content['soogikorrad']
-
-        # Andmebaasi ühenduse avamine
-        db = PGDatabase()
-        # Õpilase ID pärimine kasutades UID, LISADA kontroll, kas õpilase staatus on kehtiv (andmebaasi), või pärida vaadet, kus on kõik aktiivsed õpilased
-        db.execute("""SELECT opilane_ID FROM Opilane WHERE UID= %s ;""", (uid,))
-        records = db.getRecords()
-        # LISADA: Kontrolli, kas tagastatakse isikukood, kui ei, siis sellise UID-ga õpilast ei ole. Sulge ühendus.
-        isikukood = records[0]['isikukood']
-
-        # Andmete sisestamine Andmebaasi
-        for soogikord in soogikorrad:
-            db.execute("""INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (%s, %s, %s);""",
-            (soogikord['soogikorra_id'], isikukood, datetime.date.today() ))
-
-        # Andmete kinnitamine
-        db.commit()
-        # Ühenduse sulgemine
-        db.close()
 
 @api.route('/autentimine')
 class Autentimine(Resource):

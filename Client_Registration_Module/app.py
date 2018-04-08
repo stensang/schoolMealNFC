@@ -13,22 +13,18 @@ import time
 import MFRC522
 import RPi.GPIO as GPIO
 
-class widgetClock(Label):
-    def update(self, *args):
-        self.text = time.asctime()
-
 class AvailableMeals():
     '''DESCRIPTON'''
 
     def __init__(self):
         '''DESCRIPTON'''
 
-        self.URL = 'http://192.168.1.134:5000/soogikorrad?seisund=Registreerimine%20avatud'
+        self.URL = 'https://35.204.17.63:8080/soogikorrad?seisund=Registreerimine%20avatud'
 
     def get(self):
         '''DESCRIPTON'''
 
-        self.getResponse = requests.get(self.URL)
+        self.getResponse = requests.get(self.URL, verify=False, auth=('eino.opik@epost.ee', 'P@ssw0rd!'))
         return self.getResponse.json()
 
 class RegisterMeals():
@@ -37,12 +33,12 @@ class RegisterMeals():
     def __init__(self):
         '''DESCRIPTON'''
 
-        self.URL = 'http://192.168.1.134:5000/opilane/soogikorrad'
+        self.URL = 'https://35.204.17.63:8080/opilased/registreerimised'
 
     def register(self, payload):
         '''DESCRIPTON'''
 
-        self.postResponse = requests.post(self.URL, json = payload)
+        self.postResponse = requests.post(self.URL, verify=False, json = payload, auth=('eino.opik@epost.ee', 'P@ssw0rd!'))
         return self.postResponse
 
 class RfidReader():
@@ -67,7 +63,7 @@ class RfidReader():
         if self.status == self.MIFAREReader.MI_OK:
 
             # Join UID to string and return
-            uidSTR = ''.join(map(str, uid))
+            uidSTR =  str(hex(uid[0]) [2:]) + ':' + str(hex(uid[1]) [2:])  + ':' + str(hex(uid[2]) [2:])  + ':' + str(hex(uid[3]) [2:])
             return uidSTR
 
 
@@ -95,8 +91,15 @@ class RegistrationHandler():
             self.data['uid'] = self.uidSTR
             self.data['soogikorrad'] = RaspberryPi.ms.getCheckedMeals()
 
-            self.rm.register(self.data)
+            registerResponse = self.rm.register(self.data)
+
+            if  registerResponse.status_code == 202:
+                RaspberryPi.rs.setResponseText(registerResponse.text)
+            else:
+                RaspberryPi.rs.setResponseText(registerResponse.text)
+
             RaspberryPi.sm.current = 'response'
+
 
 class MToggleButton(ToggleButton):
     soogikorra_id=""
@@ -113,9 +116,10 @@ class Meals(BoxLayout):
         meals = am.get()
 
         for meal in meals:
-            button = (MToggleButton(
-            text=meal['nimetus'],
-            state= 'down' if meal['vaikimisi'] else 'normal'))
+            button = MToggleButton(
+            font_size = 32,
+            text=meal['liik']+' ('+meal[u'kuupäev']+')',
+            state= 'down' if meal['vaikimisi'] else 'normal')
 
             button.soogikorra_id = meal['soogikorra_id']
             self.add_widget(button)
@@ -132,12 +136,6 @@ class MainScreen(Screen):
 
         self.layoutMeals = Meals(orientation='vertical')
         self.add_widget(self.layoutMeals)
-
-        #self.layoutDate = BoxLayout(orientation='vertical')
-        #self.widgetClock1 = widgetClock()
-        #Clock.schedule_interval(self.widgetClock1.update, 1)
-        #self.layoutMeals.add_widget(self.widgetClock1)
-        #self.add_widget(self.layoutDate)
 
     def getCheckedMeals(self):
         '''DESCRIPTON'''
@@ -159,9 +157,11 @@ class ResponseScreen(Screen):
 
         super(ResponseScreen, self).__init__(**kwargs)
         self.name = 'response'
+        self.responseLabel = Label(font_size=32)
+        self.add_widget(self.responseLabel)
 
-        self.add_widget(Label(text='Aitäh! Andmete sisestamine õnnestus.'))
-
+    def setResponseText(self, t):
+        self.responseLabel.text = t
 
 class RaspberryPi(App):
     '''DESCRIPTON'''
@@ -177,7 +177,7 @@ class RaspberryPi(App):
         self.sm.add_widget(self.rs)
 
         self.rh = RegistrationHandler()
-        Clock.schedule_interval(self.rh.update, 0.5)
+        Clock.schedule_interval(self.rh.update, 0.75)
 
         return self.sm
 
