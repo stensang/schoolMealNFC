@@ -16,9 +16,8 @@ app = Flask(__name__)
 api = Api(app)
 auth = HTTPBasicAuth()
 
-# App to debug mode - website changes with refresh
-app.debug = True
-# app.config['JSON_AS_ASCII'] = False
+# CONFIGURATION
+app.config['DEBUG'] = 'False'
 
 # Payload marshalling
 muudetavSoogikord = api.model('Muudetav söögikord', {
@@ -351,7 +350,7 @@ class OpilaseRegistreerimised(Resource):
 
         db = PGDatabase()
 
-        db.execute("""SELECT ork.soogikorra_id, ork.nimetus as liik, to_char(ork.kuupaev, 'DD.MM.YYYY') as kuupäev
+        db.execute("""SELECT ork.soogikorra_id, ork.nimetus as liik, to_char(ork.kuupaev, 'YYYY-MMM-DD') as kuupäev
                       FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
                       AND kuupaev BETWEEN %s AND %s
                       ORDER BY ork.kuupaev, ork.soogikorra_id LIMIT 100 """, (isikukood, alguseKuupaev, lopuKuupaev))

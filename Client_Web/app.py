@@ -9,10 +9,11 @@ from functools import wraps
 
 # Initialize
 app = Flask(__name__) # root path
-app.config['SECRET_KEY'] = 'olen-v2ga-salajane'
 
-#App to debug mode - website changes with refresh
-app.debug = True
+# CONFIGURATION
+app.config['DEBUG'] = 'False'
+app.config['SECRET_KEY'] = ''
+app.config['WEB_SERVICE'] = ''
 
 def on_sisselogitud(f):
     @wraps(f)
@@ -25,7 +26,7 @@ def on_sisselogitud(f):
     return wrap
 
 class SoogikorraVorm(FlaskForm):
-    liigid = requests.get('http://127.0.0.1:5000/soogikorrad/liigid')
+    liigid = requests.get(app.config['WEB_SERVICE'] + '/soogikorrad/liigid')
     liigid_dict = liigid.json()
 
     # https://wtforms.readthedocs.io/en/stable/crash_course.html#download-installation
@@ -45,7 +46,7 @@ class SisselogimiseVorm(FlaskForm):
 @app.route('/soogikorrad')
 @on_sisselogitud
 def soogikorrad():
-    andmed = requests.get('http://127.0.0.1:5000/soogikorrad', auth=(session['kasutaja'], session['parool']))
+    andmed = requests.get(app.config['WEB_SERVICE'] + '/soogikorrad', auth=(session['kasutaja'], session['parool']))
     return render_template('soogikorrad.html', soogikorrad=andmed.json())
 
 @app.route('/soogikorrad/lisa', methods = ['GET', 'POST'])
@@ -60,10 +61,10 @@ def lisaSoogikord():
         payload['kasutajatunnus'] = session['kasutaja']
         payload['liik'] = vorm.liik.data
         payload['kuupäev'] = datetime.datetime.strptime(vorm.kuupaev.data, '%d.%m.%Y').strftime('%Y-%m-%d')
-        payload['vaikimisi'] = 'True' if vorm.liik.data == 2 else 'False'
+        payload['vaikimisi'] = 'True' if vorm.liik.data == 'Lõunasöök' else 'False'
         payload['kirjeldus'] = vorm.kirjeldus.data
         print(payload)
-        request = requests.post('http://127.0.0.1:5000/soogikorrad', auth=(session['kasutaja'], session['parool']), json = payload)
+        request = requests.post(app.config['WEB_SERVICE'] + '/soogikorrad', auth=(session['kasutaja'], session['parool']), json = payload)
 
         return redirect('/')
 
@@ -73,14 +74,14 @@ def lisaSoogikord():
 @app.route('/soogikorrad/<string:id>/registreerimised')
 @on_sisselogitud
 def soogikorraRegistreerimised(id="1"):
-    andmed = requests.get('http://127.0.0.1:5000/soogikorrad/' + id + '/registreerimised', auth=(session['kasutaja'], session['parool']))
+    andmed = requests.get(app.config['WEB_SERVICE'] + '/soogikorrad/' + id + '/registreerimised', auth=(session['kasutaja'], session['parool']))
     return render_template('soogikorra-registreerimised.html', soogikorraAndmed=andmed.json())
 
 @app.route('/soogikorrad/muuda/<string:id>', methods = ['GET', 'POST'])
 @on_sisselogitud
 def muudaSoogikord(id):
 
-    andmed = requests.get('http://127.0.0.1:5000/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']))
+    andmed = requests.get(app.config['WEB_SERVICE'] + '/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']))
     soogikorraAndmed = andmed.json()
     # vorm.kirjeldus.data = soogikorraAndmed['kirjeldus']
 
@@ -98,7 +99,7 @@ def muudaSoogikord(id):
         payload['kirjeldus'] = vorm.kirjeldus.data
 
         print(payload)
-        request = requests.put('http://127.0.0.1:5000/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']), json = payload)
+        request = requests.put(app.config['WEB_SERVICE'] + '/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']), json = payload)
 
         return redirect('/')
 
@@ -108,7 +109,7 @@ def muudaSoogikord(id):
 @app.route('/soogikorrad/kustuta/<string:id>', methods = ['POST'])
 @on_sisselogitud
 def kustutaSoogikord(id):
-    request = requests.delete('http://127.0.0.1:5000/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']))
+    request = requests.delete(app.config['WEB_SERVICE'] + '/soogikorrad/' + id, auth=(session['kasutaja'], session['parool']))
     return redirect('/')
 
 @app.route('/opilased/registreerimised')
@@ -124,12 +125,12 @@ def opilasteRegistreerimised():
     if lopuKuupaev is None:
         lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%d.%m.%Y')
 
-    opilasteAndmed = requests.get('http://127.0.0.1:5000/opilased/registreerimised?alguse-kuupaev='
+    opilasteAndmed = requests.get(app.config['WEB_SERVICE'] + '/opilased/registreerimised?alguse-kuupaev='
     + datetime.datetime.strptime(alguseKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d')
     + '&lopu-kuupaev=' + datetime.datetime.strptime(lopuKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d'),
     auth=(session['kasutaja'], session['parool']))
 
-    soogikorraAndmed = requests.get('http://127.0.0.1:5000/soogikorrad/liigid', auth=(session['kasutaja'], session['parool']))
+    soogikorraAndmed = requests.get(app.config['WEB_SERVICE'] + '/soogikorrad/liigid', auth=(session['kasutaja'], session['parool']))
 
     return render_template('opilaste-registreerimised.html', opilased=opilasteAndmed.json(), soogikorraLiigid=soogikorraAndmed.json(), vorm=vorm,
     alguseKuupaev=alguseKuupaev, lopuKuupaev = lopuKuupaev)
@@ -148,7 +149,7 @@ def opilaseRegistreerimised(id):
     if lopuKuupaev is None:
         lopuKuupaev = datetime.date.today().replace(day=calendar.monthrange(datetime.datetime.today().year, datetime.datetime.today().month)[1]).strftime('%d.%m.%Y')
 
-    andmed = requests.get('http://127.0.0.1:5000/opilased/' + id + '/registreerimised?alguse-kuupaev='
+    andmed = requests.get(app.config['WEB_SERVICE'] + '/opilased/' + id + '/registreerimised?alguse-kuupaev='
     + datetime.datetime.strptime(alguseKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d')
     + '&lopu-kuupaev=' + datetime.datetime.strptime(lopuKuupaev, '%d.%m.%Y').strftime('%Y-%m-%d'),
     auth=(session['kasutaja'], session['parool']))
@@ -163,7 +164,7 @@ def sisselogimine():
         payload = {}
         payload['kasutajatunnus'] = vorm.kasutajatunnus.data
         payload['parool'] = vorm.parool.data
-        authentication = requests.post('http://127.0.0.1:5000/autentimine', json = payload)
+        authentication = requests.post(app.config['WEB_SERVICE'] + '/autentimine', json = payload)
         if authentication.status_code == 202:
             session['on_sisselogitud'] = True
             session['kasutaja'] = payload['kasutajatunnus']
@@ -171,6 +172,7 @@ def sisselogimine():
             return redirect('/')
     return render_template('sisselogimine.html', vorm=vorm)
 
+@on_sisselogitud
 @app.route('/valjalogimine')
 def valjalogimine():
     session.clear()

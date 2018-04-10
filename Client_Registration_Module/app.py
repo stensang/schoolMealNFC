@@ -19,12 +19,12 @@ class AvailableMeals():
     def __init__(self):
         '''DESCRIPTON'''
 
-        self.URL = 'https://35.204.17.63:8080/soogikorrad?seisund=Registreerimine%20avatud'
+        self.URL = 'https://www.registreerima.ee:8080/soogikorrad?seisund=Registreerimine%20avatud'
 
     def get(self):
         '''DESCRIPTON'''
 
-        self.getResponse = requests.get(self.URL, verify=False, auth=('eino.opik@epost.ee', 'P@ssw0rd!'))
+        self.getResponse = requests.get(self.URL, verify=False, auth=('', ''))
         return self.getResponse.json()
 
 class RegisterMeals():
@@ -33,7 +33,7 @@ class RegisterMeals():
     def __init__(self):
         '''DESCRIPTON'''
 
-        self.URL = 'https://35.204.17.63:8080/opilased/registreerimised'
+        self.URL = 'https://www.registreerima.ee:8080/opilased/registreerimised'
 
     def register(self, payload):
         '''DESCRIPTON'''
@@ -112,9 +112,15 @@ class Meals(BoxLayout):
 
         super(Meals, self).__init__(**kwargs)
 
-        am = AvailableMeals()
-        meals = am.get()
+        self.am = AvailableMeals()
+        self.update()
 
+    def update(self, *args):
+        meals = self.am.get()
+        self.clear_widgets()
+        if not meals:
+            label = Label(font_size=32, text=u'Ühtegi söögikorda registreerimiseks avatud ei ole!')
+            self.add_widget(label)
         for meal in meals:
             button = MToggleButton(
             font_size = 32,
@@ -135,6 +141,8 @@ class MainScreen(Screen):
         self.name = 'main'
 
         self.layoutMeals = Meals(orientation='vertical')
+        Clock.schedule_interval(self.layoutMeals.update, 300)
+
         self.add_widget(self.layoutMeals)
 
     def getCheckedMeals(self):
@@ -184,7 +192,8 @@ class RaspberryPi(App):
 if __name__ == '__main__':
 
     try:
-        RaspberryPi().run()
+        RaspberryPi = RaspberryPi()
+        RaspberryPi.run()
 
     except KeyboardInterrupt:
 
