@@ -350,7 +350,7 @@ class OpilaseRegistreerimised(Resource):
 
         db = PGDatabase()
 
-        db.execute("""SELECT ork.soogikorra_id, ork.nimetus as liik, to_char(ork.kuupaev, 'YYYY-MMM-DD') as kuupäev
+        db.execute("""SELECT ork.soogikorra_id, ork.nimetus as liik, to_char(ork.kuupaev, 'YYYY-MM-DD') as kuupäev
                       FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
                       AND kuupaev BETWEEN %s AND %s
                       ORDER BY ork.kuupaev, ork.soogikorra_id LIMIT 100 """, (isikukood, alguseKuupaev, lopuKuupaev))
