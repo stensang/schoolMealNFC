@@ -8,10 +8,10 @@ from wtforms import Form, StringField, BooleanField, SubmitField, DateField, Tex
 from functools import wraps
 
 # Initialize
-app = Flask(__name__) # root path
+app = Flask(__name__)
 
 # CONFIGURATION
-app.config['DEBUG'] = 'False'
+app.config['DEBUG'] = ''
 app.config['SECRET_KEY'] = ''
 app.config['WEB_SERVICE'] = ''
 
@@ -180,4 +180,4 @@ def valjalogimine():
 
 # Only run if it is a main file
 if __name__ == '__main__':
-    app.run(port=5001)
+    app.run()

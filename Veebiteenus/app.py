@@ -5,11 +5,12 @@
 from flask import Flask, request, jsonify, Response
 # http://flask-restplus.readthedocs.io/en/stable/
 from flask_restplus import Api, Resource, fields
+# https://flask-httpauth.readthedocs.io/en/latest/
+from flask_httpauth import HTTPBasicAuth
 import datetime
 import calendar
 import sys
 from database import PGDatabase
-from flask_httpauth import HTTPBasicAuth
 
 # Initialize
 app = Flask(__name__)
@@ -17,7 +18,7 @@ api = Api(app)
 auth = HTTPBasicAuth()
 
 # CONFIGURATION
-app.config['DEBUG'] = 'False'
+app.config['DEBUG'] = ''
 
 # Payload marshalling
 muudetavSoogikord = api.model('Muudetav söögikord', {
@@ -51,6 +52,7 @@ kasutajaAndmed = api.model('Kasutaja andmed', {
     'kasutajatunnus' : fields.String,
     'parool' : fields.String,
 })
+## End of payload marshalling
 
 @auth.verify_password
 def verify_password(username, password):
@@ -205,13 +207,13 @@ class SoogikorraRegistreerimised(Resource):
 
             db.execute("""
                         WITH Registreerimised AS (
-                          SELECT s.klass_id, s.opilasi_registreeritud
-                          FROM Soogikorrad_klasside_registreerimised s
-                          WHERE s.soogikorra_id = %s
+                          SELECT kr.klass_id, kr.opilasi_registreeritud
+                          FROM Klasside_registreeringud kr
+                          WHERE kr.soogikorra_id = %s
                         )
 
                         SELECT k.nimetus, k.opilasi_klassis, COALESCE(r.opilasi_registreeritud, 0) AS opilasi_registreeritud
-                        FROM Klass_opilasi_klassis k LEFT JOIN Registreerimised r
+                        FROM Klasside_opilaste_arv k LEFT JOIN Registreerimised r
                         ON k.klass_id = r.klass_id
                         WHERE k.soojate_grupp_kood = %s;
                         """, (lunchDict['soogikorra_id'], group['soojate_grupp_kood']))
@@ -277,11 +279,11 @@ class OpilasteRegistreerimised(Resource):
         db = PGDatabase()
 
         for opilane in opilased:
-            db.execute("""SELECT ork.nimetus as liik, COUNT(*) as registreerimisi
-                          FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
+            db.execute("""SELECT rk.nimetus as liik, COUNT(*) as registreerimisi
+                          FROM Registreeringute_koondtabel rk WHERE rk.isikukood = %s
                           AND kuupaev BETWEEN %s AND %s
-                          GROUP BY ork.nimetus
-                          ORDER BY ork.nimetus LIMIT 100 """, (opilane['isikukood'], alguseKuupaev, lopuKuupaev))
+                          GROUP BY rk.nimetus
+                          ORDER BY rk.nimetus LIMIT 100 """, (opilane['isikukood'], alguseKuupaev, lopuKuupaev))
             soogikorrad = db.getRecords()
             opilane['registreerimised'] = soogikorrad
             opilasteRegistreerimised.append(opilane)
@@ -298,7 +300,7 @@ class OpilasteRegistreerimised(Resource):
         uid = content['uid']
         soogikorrad = content['soogikorrad']
 
-        # Andmebaasi   henduse avamine
+        # Andmebaasi ühenduse avamine
         db = PGDatabase()
         db.execute("""SELECT isikukood FROM Opilaste_koondtabel WHERE UID=%s AND opilase_seisundi_liik_kood=1;""", (uid,))
         records = db.getRecords()
@@ -310,7 +312,7 @@ class OpilasteRegistreerimised(Resource):
 
         for soogikord in soogikorrad:
             try:
-                db.execute("""INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (%s, %s, %s);""",
+                db.execute("""INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (%s, %s, %s);""",
                 (soogikord['soogikorra_id'], isikukood, datetime.date.today() ))
             except Exception as e:
 
@@ -350,10 +352,10 @@ class OpilaseRegistreerimised(Resource):
 
         db = PGDatabase()
 
-        db.execute("""SELECT ork.soogikorra_id, ork.nimetus as liik, to_char(ork.kuupaev, 'YYYY-MM-DD') as kuupäev
-                      FROM Opilaste_registreerimiste_koondtabel ork WHERE ork.isikukood = %s
+        db.execute("""SELECT rk.soogikorra_id, rk.nimetus as liik, to_char(rk.kuupaev, 'YYYY-MM-DD') as kuupäev
+                      FROM Registreeringute_koondtabel rk WHERE rk.isikukood = %s
                       AND kuupaev BETWEEN %s AND %s
-                      ORDER BY ork.kuupaev, ork.soogikorra_id LIMIT 100 """, (isikukood, alguseKuupaev, lopuKuupaev))
+                      ORDER BY rk.kuupaev, rk.soogikorra_id LIMIT 100 """, (isikukood, alguseKuupaev, lopuKuupaev))
         soogikorrad = db.getRecords()
 
         db.close()

@@ -1,15 +1,13 @@
-﻿DROP VIEW IF EXISTS Soogikorrad_klasside_registreerimised CASCADE;
-DROP VIEW IF EXISTS Opilaste_registreerimiste_koondtabel CASCADE;
-DROP VIEW IF EXISTS Opilaste_registreerimised CASCADE;
+DROP VIEW IF EXISTS Klasside_registreeringud CASCADE;
+DROP VIEW IF EXISTS Registreeringute_koondtabel CASCADE;
 DROP VIEW IF EXISTS Soogikordade_koondtabel CASCADE;
 DROP VIEW IF EXISTS Opilaste_koondtabel CASCADE;
-DROP VIEW IF EXISTS Soogikorrad_registreerimisele_avatud CASCADE;
-DROP VIEW IF EXISTS Klass_opilasi_klassis CASCADE;
+DROP VIEW IF EXISTS Klasside_opilaste_arv CASCADE;
 
 ALTER TABLE Opilane DROP CONSTRAINT FK_opilane_klass_ID;
 ALTER TABLE Opilane DROP CONSTRAINT FK_opilane_opilase_seisundi_liik_kood;
-ALTER TABLE Opilase_soogikorrad DROP CONSTRAINT FK_opilase_soogikorrad_isikukood;
-ALTER TABLE Opilase_soogikorrad DROP CONSTRAINT FK_opilase_soogikorrad_soogikorra_ID;
+ALTER TABLE Registreering DROP CONSTRAINT FK_registreering_isikukood;
+ALTER TABLE Registreering DROP CONSTRAINT FK_registreering_soogikorra_ID;
 ALTER TABLE Tootaja_ametid DROP CONSTRAINT FK_tootaja_ametid_amet_kood;
 ALTER TABLE Tootaja_ametid DROP CONSTRAINT FK_tootaja_ametid_isikukood;
 ALTER TABLE Tootaja DROP CONSTRAINT FK_tootaja_tootaja_seisundi_liik_kood;
@@ -24,8 +22,8 @@ ALTER TABLE Soogikord DROP CONSTRAINT FK_soogikord_soogikorra_liik_kood;
 DROP INDEX IF EXISTS IDX_tootaja_ametid_amet_kood;
 DROP INDEX IF EXISTS IDX_tootaja_ametid_isikukood;
 DROP INDEX IF EXISTS IDX_tootaja_tootaja_seisundi_liik_kood;
-DROP INDEX IF EXISTS IDX_opilase_soogikorrad_isikukood;
-DROP INDEX IF EXISTS IDX_opilase_soogikorrad_soogikorra_ID;
+DROP INDEX IF EXISTS IDX_registreering_isikukood;
+DROP INDEX IF EXISTS IDX_registreering_soogikorra_ID;
 DROP INDEX IF EXISTS IDX_opilane_opilase_seisundi_liik_kood;
 DROP INDEX IF EXISTS IDX_opilane_klass_ID;
 DROP INDEX IF EXISTS IDX_soogikord_soogikorra_seisundi_liik_kood;
@@ -41,7 +39,7 @@ DROP TABLE IF EXISTS Soogikorra_liik CASCADE;
 DROP TABLE IF EXISTS Opilane;
 DROP TABLE IF EXISTS Kooliaste;
 DROP TABLE IF EXISTS Opilase_seisundi_liik;
-DROP TABLE IF EXISTS Opilase_soogikorrad;
+DROP TABLE IF EXISTS Registreering;
 DROP TABLE IF EXISTS Amet;
 DROP TABLE IF EXISTS Soogikorra_seisundi_liik;
 DROP TABLE IF EXISTS Tootaja_ametid;
@@ -92,16 +90,16 @@ CREATE TABLE Soogikorra_liik (
 	CONSTRAINT PK_soogikorra_liik PRIMARY KEY (soogikorra_liik_kood),
 	CONSTRAINT AK_soogikorra_liik_nimetus UNIQUE (nimetus)
 	);
-CREATE TABLE Opilase_soogikorrad (
-	opilase_soogikorra_ID SERIAL NOT NULL,
+CREATE TABLE Registreering (
+	registreerimise_ID SERIAL NOT NULL,
 	soogikorra_ID SMALLINT NOT NULL,
 	isikukood CHAR ( 11 ) NOT NULL,
 	registreerimise_kuupaev DATE NOT NULL,
-	CONSTRAINT PK_opilase_soogikorrad PRIMARY KEY (opilase_soogikorra_ID),
-	CONSTRAINT AK_Opilase_soogikorrad_soogikorra_id_isikukood UNIQUE (soogikorra_ID, isikukood)
+	CONSTRAINT PK_registreering PRIMARY KEY (registreerimise_ID),
+	CONSTRAINT AK_registreering_soogikorra_id_isikukood UNIQUE (soogikorra_ID, isikukood)
 	);
-CREATE INDEX IDX_opilase_soogikorrad_isikukood ON Opilase_soogikorrad (isikukood );
-CREATE INDEX IDX_opilase_soogikorrad_soogikorra_ID ON Opilase_soogikorrad (soogikorra_ID );
+CREATE INDEX IDX_registreering_isikukood ON Registreering (isikukood );
+CREATE INDEX IDX_registreering_soogikorra_ID ON Registreering (soogikorra_ID );
 CREATE TABLE Klass (
 	klass_ID SERIAL NOT NULL,
 	nimetus D_NIMETUS,
@@ -193,8 +191,8 @@ CREATE INDEX IDX_tootaja_ametid_isikukood ON Tootaja_ametid (isikukood );
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_isikukood FOREIGN KEY (isikukood) REFERENCES Isik (isikukood) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_klass_ID FOREIGN KEY (klass_ID) REFERENCES Klass (klass_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_opilase_seisundi_liik_kood FOREIGN KEY (opilase_seisundi_liik_kood) REFERENCES Opilase_seisundi_liik (opilase_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Opilase_soogikorrad ADD CONSTRAINT FK_opilase_soogikorrad_isikukood FOREIGN KEY (isikukood) REFERENCES Opilane (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Opilase_soogikorrad ADD CONSTRAINT FK_opilase_soogikorrad_soogikorra_ID FOREIGN KEY (soogikorra_ID) REFERENCES Soogikord (soogikorra_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Registreering ADD CONSTRAINT FK_registreering_isikukood FOREIGN KEY (isikukood) REFERENCES Opilane (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Registreering ADD CONSTRAINT FK_registreering_soogikorra_ID FOREIGN KEY (soogikorra_ID) REFERENCES Soogikord (soogikorra_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_amet_kood FOREIGN KEY (amet_kood) REFERENCES Amet (amet_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_isikukood FOREIGN KEY (isikukood) REFERENCES Isik (isikukood) ON DELETE CASCADE ON UPDATE NO ACTION;
@@ -209,39 +207,26 @@ ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_liik_kood FOREIGN K
 
 -- VIEWS
 
--- Tuleb mõelda parem süsteem, sest tabeli suurenedes läheb päringuks palju aega
-CREATE VIEW Soogikorrad_klasside_registreerimised AS
+CREATE VIEW Klasside_registreeringud AS
 SELECT
-	opilase_soogikorrad.soogikorra_id,
-	opilane.klass_id,
+	r.soogikorra_ID,
+	o.klass_id,
 	COUNT(*) as opilasi_registreeritud
-FROM opilase_soogikorrad
-	INNER JOIN opilane ON opilase_soogikorrad.isikukood = opilane.isikukood
+FROM Registreering r
+	INNER JOIN Opilane o ON r.isikukood = o.isikukood
 GROUP BY
-	opilase_soogikorrad.soogikorra_id,
-	opilane.klass_id;
+	r.soogikorra_ID,
+	o.klass_id;
 
-CREATE VIEW Opilaste_registreerimiste_koondtabel AS
+CREATE VIEW Registreeringute_koondtabel AS
 SELECT
 	s.soogikorra_id,
 	sl.nimetus,
-	os.isikukood,
+	r.isikukood,
 	s.kuupaev
-FROM opilase_soogikorrad os
-	INNER JOIN soogikord s ON os.soogikorra_id = s.soogikorra_id
+FROM Registreering r
+	INNER JOIN soogikord s ON r.soogikorra_id = s.soogikorra_id
 	INNER JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood;
-
--- Tuleb mõelda parem süsteem, sest tabeli suurenedes läheb päringuks palju aega.
-CREATE VIEW Opilaste_registreerimised AS
-SELECT
-	os.isikukood,
-	to_char(s.kuupaev,'YYYY-MM') as kuu,
-	sl.nimetus,
-	COUNT(*) AS registreerimised
-FROM Opilase_soogikorrad os
-	INNER JOIN soogikord s ON os.soogikorra_id = s.soogikorra_id
-	INNER JOIN soogikorra_liik sl ON s.soogikorra_liik_kood = sl.soogikorra_liik_kood
-GROUP BY 1, 2, 3;
 
 CREATE VIEW Soogikordade_koondtabel AS
 SELECT
@@ -270,29 +255,19 @@ FROM opilane o
 WHERE
 	k.klassi_seisundi_liik_kood = 1;
 
- CREATE VIEW Soogikorrad_registreerimisele_avatud AS
+CREATE VIEW Klasside_opilaste_arv AS
  SELECT
-	 Soogikord.soogikorra_id,
-	 Soogikorra_liik.nimetus,
-	 Soogikord.vaikimisi
- FROM Soogikord
- 	INNER JOIN Soogikorra_liik ON Soogikord.soogikorra_liik_kood = Soogikorra_liik.soogikorra_liik_kood
- WHERE
- 	Soogikord.soogikorra_seisundi_liik_kood = 3;
-
- CREATE VIEW Klass_opilasi_klassis AS
- SELECT
- 	klass.klass_id,
- 	klass.nimetus,
- 	klass.soojate_grupp_kood,
+ 	k.klass_id,
+ 	k.nimetus,
+ 	k.soojate_grupp_kood,
  	count(*) as opilasi_klassis
- FROM Klass
- 	INNER JOIN Opilane ON klass.klass_id = opilane.klass_id
+ FROM Klass k
+ 	INNER JOIN Opilane o ON k.klass_id = o.klass_id
  WHERE
- 	opilane.opilase_seisundi_liik_kood = 1
+ 	o.opilase_seisundi_liik_kood = 1
  GROUP BY
- 	klass.klass_id,
-	klass.nimetus;
+ 	k.klass_id,
+	k.nimetus;
 
 
 -- SAMPLE DATA
@@ -325,7 +300,7 @@ INSERT INTO Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood, nimetus) VA
 -- Nimed genereeritud tööriistaga http://namegenerators.org/estonian-male-name-generator-ee/
 INSERT INTO Isik (isikukood, eesnimi, perekonnanimi) VALUES ('38001010014', 'Eino', 'Öpik');
 
-INSERT INTO Tootaja (isikukood, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'eino.opik@epost.ee', 'Tal.Hel.Sto', 1);
+INSERT INTO Tootaja (isikukood, epost, parool, tootaja_seisundi_liik_kood) VALUES ('38001010014', 'eino.opik@epost.ee', 'Trustno1', 1);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 1219);
 INSERT INTO Tootaja_ametid (isikukood, amet_kood) VALUES ('38001010014', 2341);
 
@@ -390,26 +365,26 @@ INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUE
 INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('50305155150', '13213021943256', 1, 9);
 INSERT INTO Opilane (isikukood, uid, opilase_seisundi_liik_kood, klass_ID) VALUES ('60306166160', '13213021943257', 1, 9);
 
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '51101011010', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (2, '51101011010', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (3, '51101011010', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '61102022020', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '51003033030', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '61004044040', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50905055050', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60906066060', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50807077070', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60808088080', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50709099090', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60710101100', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50611111110', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60612121120', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50501111100', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60502121210', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50403133130', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60404144140', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50305155150', '2018-03-16');
-INSERT INTO Opilase_soogikorrad (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60306166160', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '51101011010', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (2, '51101011010', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (3, '51101011010', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '61102022020', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '51003033030', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '61004044040', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50905055050', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60906066060', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50807077070', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60808088080', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50709099090', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60710101100', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50611111110', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60612121120', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50501111100', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60502121210', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50403133130', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60404144140', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50305155150', '2018-03-16');
+INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60306166160', '2018-03-16');
 
 UPDATE Tootaja SET parool = public.crypt(parool,public.gen_salt('bf', 11));
 
@@ -434,8 +409,7 @@ UPDATE Soogikord SET soogikorra_seisundi_liik_kood = 3 WHERE kuupaev=$1;
 $$ LANGUAGE sql SECURITY DEFINER
 SET search_path = public, pg_temp;
 COMMENT ON FUNCTION f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE) IS
-'Selle funktsiooni abil avatakse söögikorra registreerimine. Funktsioon realiseerib andmebaasioperatsiooni
-OP __';
+'Selle funktsiooni abil avatakse söögikorra registreerimine.';
 
 CREATE OR REPLACE FUNCTION f_sulge_soogikorra_registreerimine(soogikord.kuupaev%TYPE)
 RETURNS VOID AS $$
@@ -443,5 +417,4 @@ UPDATE Soogikord SET soogikorra_seisundi_liik_kood = 4 WHERE kuupaev=$1;
 $$ LANGUAGE sql SECURITY DEFINER
 SET search_path = public, pg_temp;
 COMMENT ON FUNCTION f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE) IS
-'Selle funktsiooni abil suletakse söögikorra registreerimine. Funktsioon realiseerib andmebaasioperatsiooni
-OP __';
+'Selle funktsiooni abil suletakse söögikorra registreerimine.';

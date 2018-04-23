@@ -23,9 +23,12 @@ class AvailableMeals():
 
     def get(self):
         '''DESCRIPTON'''
-
-        self.getResponse = requests.get(self.URL, verify=False, auth=('', ''))
-        return self.getResponse.json()
+        try:
+            self.getResponse = requests.get(self.URL, verify=False, auth=('', ''))
+            return self.getResponse.json()
+        except:
+            time.sleep(300)
+            self.get()
 
 class RegisterMeals():
     '''DESCRIPTON'''
