@@ -1,2 +1,2 @@
-#Toidukordade registreerimise infosüsteem
+#Söögikordade registreerimise infosüsteem
 
