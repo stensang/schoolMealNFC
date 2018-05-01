@@ -3,6 +3,13 @@ DROP VIEW IF EXISTS Registreeringute_koondtabel CASCADE;
 DROP VIEW IF EXISTS Soogikordade_koondtabel CASCADE;
 DROP VIEW IF EXISTS Opilaste_koondtabel CASCADE;
 DROP VIEW IF EXISTS Klasside_opilaste_arv CASCADE;
+DROP TRIGGER IF EXISTS trig_tyhista_soogikorra_muudatus_parast_avamist;
+DROP TRIGGER IF EXISTS trig_tyhista_arhiveeritud_soogikorra_muudatus;
+DROP FUNCTION IF EXISTS f_on_majandusala_juhataja(text, text);
+DROP FUNCTION IF EXISTS f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE);
+DROP FUNCTION IF EXISTS f_sulge_soogikorra_registreerimine(soogikord.kuupaev%TYPE);
+DROP FUNCTION IF EXISTS f_tyhista_soogikorra_muudatus_parast_avamist();
+DROP FUNCTION IF EXISTS f_tyhista_arhiveeritud_soogikorra_muudatus();
 
 ALTER TABLE Opilane DROP CONSTRAINT FK_opilane_klass_ID;
 ALTER TABLE Opilane DROP CONSTRAINT FK_opilane_opilase_seisundi_liik_kood;
@@ -434,7 +441,7 @@ ON soogikord
 FOR EACH ROW WHEN (old.soogikorra_seisundi_liik_kood > 2)
 EXECUTE PROCEDURE f_tyhista_soogikorra_muudatus_parast_avamist();
 
-CREATE OR REPLACE FUNCTION f_tyhista_arhiveeritud_soogikorra_muudatus() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION f_tyhista_arhiveeritud_soogikorra_muudatus(); RETURNS trigger AS $$
 BEGIN
     RAISE EXCEPTION 'Arhiveeritud söögikorda ei saa muuta';
     RETURN NULL;
