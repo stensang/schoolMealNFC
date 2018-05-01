@@ -6,8 +6,8 @@ import psycopg2
 class PGDatabase():
     def __init__(self):
         #Define our connection string
-        self.conn_string = "host='localhost' dbname='postgres' user='postgres' password='postgres' \
-                            sslmode='verify-ca' sslrootcert='' sslcert='' sslkey=''"
+        self.conn_string = "host='' dbname='' user='' password='' \
+                           sslmode='verify-ca' sslrootcert='' sslcert='' sslkey=''"
         # get a connection, if a connect cannot be made an exception will be raised here
         self.conn = psycopg2.connect(self.conn_string)
         # conn.cursor will return a cursor object, you can use this cursor to perform queries

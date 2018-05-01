@@ -25,7 +25,7 @@ muudetavSoogikord = api.model('Muudetav söögikord', {
     'liik' : fields.String ('Söögikorra liik (nt Hommikusöök, Lõunasöök, Lisaeine)'),
     'kuupäev' : fields.String ('Söögikorra toimumise kuupäev (nt "2018-02-02")'),
     'vaikimisi' : fields.String ('Kas söögikord on vaikimisi valik? (nt "True"/"False")'),
-    'kirjeldus' : fields.String ('Söögikorra kirjeldus (nt "Väga maitsev")'),
+    'kirjeldus' : fields.String ('Söögikorra kirjeldus (nt "6. klass saab lõunatoiduna ekskursioonile kaasa võilevad ja mahla")'),
 })
 
 soogikord = api.inherit('Söögikord', muudetavSoogikord, {
@@ -54,6 +54,7 @@ kasutajaAndmed = api.model('Kasutaja andmed', {
 })
 ## End of payload marshalling
 
+# https://flask-httpauth.readthedocs.io/en/latest/
 @auth.verify_password
 def verify_password(username, password):
     db = PGDatabase()

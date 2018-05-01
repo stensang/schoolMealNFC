@@ -41,7 +41,7 @@ class RegisterMeals():
     def register(self, payload):
         '''DESCRIPTON'''
 
-        self.postResponse = requests.post(self.URL, verify=False, json = payload, auth=('eino.opik@epost.ee', 'P@ssw0rd!'))
+        self.postResponse = requests.post(self.URL, verify=False, json = payload, auth=('', ''))
         return self.postResponse
 
 class RfidReader():

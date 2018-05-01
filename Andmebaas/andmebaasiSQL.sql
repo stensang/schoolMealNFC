@@ -400,8 +400,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE
 SET search_path = public, pg_temp;
 COMMENT ON FUNCTION f_on_majandusala_juhataja(text, text) IS
-'Selle funktsiooni abil autenditakse majandusala juhataja. Funktsiooni väljakutsel on esimene argument e-post ja teine
-argument parool. Juhtkonna liikmel on õigus süsteemi siseneda, vaid siis kui tema seisundiks on aktiivne';
+'Selle funktsiooni abil autenditakse majandusalajuhataja. Funktsiooni väljakutsel on esimene argument e-post ja teine
+argument parool. Majandusalajuhatajal on õigus süsteemi siseneda, vaid siis kui tema seisund on aktiivne';
 
 CREATE OR REPLACE FUNCTION f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE)
 RETURNS VOID AS $$
@@ -418,3 +418,31 @@ $$ LANGUAGE sql SECURITY DEFINER
 SET search_path = public, pg_temp;
 COMMENT ON FUNCTION f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE) IS
 'Selle funktsiooni abil suletakse söögikorra registreerimine.';
+
+CREATE OR REPLACE FUNCTION f_tyhista_soogikorra_muudatus_parast_avamist() RETURNS trigger AS $$
+BEGIN
+    RAISE EXCEPTION 'Söögikorra andmeid ei saa muuta pärast registreerimise avamist';
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION f_tyhista_soogikorra_muudatus() IS
+'Söögikorra andmeid ei saa muuta pärast registreerimise avamist';
+
+CREATE TRIGGER trig_tyhista_soogikorra_muudatus_parast_avamist BEFORE UPDATE OF
+soogikorra_ID, isikukood, soogikorra_liik_kood, kuupaev, vaikimisi, kirjeldus
+ON soogikord
+FOR EACH ROW WHEN (old.soogikorra_seisundi_liik_kood > 2)
+EXECUTE PROCEDURE f_tyhista_soogikorra_muudatus_parast_avamist();
+
+CREATE OR REPLACE FUNCTION f_tyhista_arhiveeritud_soogikorra_muudatus() RETURNS trigger AS $$
+BEGIN
+    RAISE EXCEPTION 'Arhiveeritud söögikorda ei saa muuta';
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION f_tyhista_arhiveeritud_soogikorra_muudatus() IS
+'Arhiveeritud söögikorda ei saa muuta';
+
+CREATE TRIGGER trig_tyhista_arhiveeritud_soogikorra_muudatus BEFORE UPDATE ON soogikord
+FOR EACH ROW WHEN (old.soogikorra_seisundi_liik_kood = 0)
+EXECUTE PROCEDURE f_tyhista_arhiveeritud_soogikorra_muudatus();
