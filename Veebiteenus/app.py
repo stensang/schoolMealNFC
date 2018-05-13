@@ -58,9 +58,9 @@ kasutajaAndmed = api.model('Kasutaja andmed', {
 @auth.verify_password
 def verify_password(username, password):
     db = PGDatabase()
-    db.execute("""SELECT f_on_majandusala_juhataja(%s, %s) as on_majandusala_juhataja;""", (username, password))
+    db.execute("""SELECT f_on_majandusalajuhataja(%s, %s) as on_majandusalajuhataja;""", (username, password))
     result = db.getRecords()
-    return result[0]['on_majandusala_juhataja']
+    return result[0]['on_majandusalajuhataja']
 
 @api.route('/soogikorrad')
 class Soogikorrad(Resource):
@@ -373,7 +373,7 @@ class Autentimine(Resource):
         kasutajatunnus = content['kasutajatunnus']
         parool = content['parool']
         db = PGDatabase()
-        db.execute("""SELECT f_on_majandusala_juhataja(%s, %s) as success;""", (kasutajatunnus, parool))
+        db.execute("""SELECT f_on_majandusalajuhataja(%s, %s) as success;""", (kasutajatunnus, parool))
         result = db.getRecords()
         if result[0]['success']:
             return Response('Juurdepääs lubatud', 202)

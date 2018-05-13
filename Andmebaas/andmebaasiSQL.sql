@@ -3,9 +3,11 @@ DROP VIEW IF EXISTS Registreeringute_koondtabel CASCADE;
 DROP VIEW IF EXISTS Soogikordade_koondtabel CASCADE;
 DROP VIEW IF EXISTS Opilaste_koondtabel CASCADE;
 DROP VIEW IF EXISTS Klasside_opilaste_arv CASCADE;
+
 DROP TRIGGER IF EXISTS trig_tyhista_soogikorra_muudatus_parast_avamist;
 DROP TRIGGER IF EXISTS trig_tyhista_arhiveeritud_soogikorra_muudatus;
-DROP FUNCTION IF EXISTS f_on_majandusala_juhataja(text, text);
+
+DROP FUNCTION IF EXISTS f_on_majandusalajuhataja(text, text);
 DROP FUNCTION IF EXISTS f_ava_soogikorra_registreerimine(soogikord.kuupaev%TYPE);
 DROP FUNCTION IF EXISTS f_sulge_soogikorra_registreerimine(soogikord.kuupaev%TYPE);
 DROP FUNCTION IF EXISTS f_tyhista_soogikorra_muudatus_parast_avamist();
@@ -41,8 +43,8 @@ DROP INDEX IF EXISTS IDX_klass_klassi_seisundi_liik_kood;
 DROP INDEX IF EXISTS IDX_klass_isikukood;
 DROP INDEX IF EXISTS IDX_klass_soojate_grupp_kood;
 
-DROP TABLE IF EXISTS Isik CASCADE;
-DROP TABLE IF EXISTS Soogikorra_liik CASCADE;
+DROP TABLE IF EXISTS Isik;
+DROP TABLE IF EXISTS Soogikorra_liik;
 DROP TABLE IF EXISTS Opilane;
 DROP TABLE IF EXISTS Kooliaste;
 DROP TABLE IF EXISTS Opilase_seisundi_liik;
@@ -59,6 +61,7 @@ DROP TABLE IF EXISTS Soojate_grupp;
 
 DROP DOMAIN IF EXISTS d_nimetus;
 DROP DOMAIN IF EXISTS d_kirjeldus;
+
 CREATE DOMAIN d_nimetus AS VARCHAR ( 50 ) NOT NULL CHECK (VALUE!~'^[[:space:]]*$');
 CREATE DOMAIN d_kirjeldus AS VARCHAR ( 200 ) CHECK (VALUE!~'^[[:space:]]*$');
 
@@ -167,7 +170,8 @@ CREATE TABLE Soogikord (
 	kuupaev DATE NOT NULL,
 	vaikimisi BOOLEAN NOT NULL,
 	kirjeldus D_KIRJELDUS,
-	CONSTRAINT PK_soogikord PRIMARY KEY (soogikorra_ID)
+	CONSTRAINT PK_soogikord PRIMARY KEY (soogikorra_ID),
+	CONSTRAINT AK_soogikord_soogikorra_liik_kood_kuupaev UNIQUE (soogikorra_liik_kood, kuupaev)
 	);
 CREATE TABLE Soojate_grupp (
 	soojate_grupp_kood SMALLINT NOT NULL,
@@ -195,24 +199,24 @@ CREATE TABLE Tootaja_ametid (
 CREATE INDEX IDX_tootaja_ametid_amet_kood ON Tootaja_ametid (amet_kood );
 CREATE INDEX IDX_tootaja_ametid_isikukood ON Tootaja_ametid (isikukood );
 
-ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_isikukood FOREIGN KEY (isikukood) REFERENCES Isik (isikukood) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_isikukood FOREIGN KEY (isikukood) REFERENCES Isik (isikukood) ON DELETE NO ACTION ON UPDATE CASCADE;
 ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_klass_ID FOREIGN KEY (klass_ID) REFERENCES Klass (klass_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_opilase_seisundi_liik_kood FOREIGN KEY (opilase_seisundi_liik_kood) REFERENCES Opilase_seisundi_liik (opilase_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Registreering ADD CONSTRAINT FK_registreering_isikukood FOREIGN KEY (isikukood) REFERENCES Opilane (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Opilane ADD CONSTRAINT FK_opilane_opilase_seisundi_liik_kood FOREIGN KEY (opilase_seisundi_liik_kood) REFERENCES Opilase_seisundi_liik (opilase_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Registreering ADD CONSTRAINT FK_registreering_isikukood FOREIGN KEY (isikukood) REFERENCES Opilane (isikukood)  ON DELETE NO ACTION ON UPDATE CASCADE;
 ALTER TABLE Registreering ADD CONSTRAINT FK_registreering_soogikorra_ID FOREIGN KEY (soogikorra_ID) REFERENCES Soogikord (soogikorra_ID)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_amet_kood FOREIGN KEY (amet_kood) REFERENCES Amet (amet_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_isikukood FOREIGN KEY (isikukood) REFERENCES Isik (isikukood) ON DELETE CASCADE ON UPDATE NO ACTION;
-ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_tootaja_seisundi_liik_kood FOREIGN KEY (tootaja_seisundi_liik_kood) REFERENCES Tootaja_seisundi_liik (tootaja_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Klass ADD CONSTRAINT FK_klass_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Klass ADD CONSTRAINT FK_klass_klassi_seisundi_liik_kood FOREIGN KEY (klassi_seisundi_liik_kood) REFERENCES Klassi_seisundi_liik (klassi_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Klass ADD CONSTRAINT FK_klass_kooliaste_kood FOREIGN KEY (kooliaste_kood) REFERENCES Kooliaste (kooliaste_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Klass ADD CONSTRAINT FK_klass_soojate_grupp_kood FOREIGN KEY (soojate_grupp_kood) REFERENCES Soojate_grupp (soojate_grupp_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_seisundi_liik_kood FOREIGN KEY (soogikorra_seisundi_liik_kood) REFERENCES Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_liik_kood FOREIGN KEY (soogikorra_liik_kood) REFERENCES Soogikorra_liik (soogikorra_liik_kood)  ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_amet_kood FOREIGN KEY (amet_kood) REFERENCES Amet (amet_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Tootaja_ametid ADD CONSTRAINT FK_tootaja_ametid_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_isikukood FOREIGN KEY (isikukood) REFERENCES Isik (isikukood) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Tootaja ADD CONSTRAINT FK_tootaja_tootaja_seisundi_liik_kood FOREIGN KEY (tootaja_seisundi_liik_kood) REFERENCES Tootaja_seisundi_liik (tootaja_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Klass ADD CONSTRAINT FK_klass_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Klass ADD CONSTRAINT FK_klass_klassi_seisundi_liik_kood FOREIGN KEY (klassi_seisundi_liik_kood) REFERENCES Klassi_seisundi_liik (klassi_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Klass ADD CONSTRAINT FK_klass_kooliaste_kood FOREIGN KEY (kooliaste_kood) REFERENCES Kooliaste (kooliaste_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Klass ADD CONSTRAINT FK_klass_soojate_grupp_kood FOREIGN KEY (soojate_grupp_kood) REFERENCES Soojate_grupp (soojate_grupp_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_isikukood FOREIGN KEY (isikukood) REFERENCES Tootaja (isikukood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_seisundi_liik_kood FOREIGN KEY (soogikorra_seisundi_liik_kood) REFERENCES Soogikorra_seisundi_liik (soogikorra_seisundi_liik_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE Soogikord ADD CONSTRAINT FK_soogikord_soogikorra_liik_kood FOREIGN KEY (soogikorra_liik_kood) REFERENCES Soogikorra_liik (soogikorra_liik_kood)  ON DELETE NO ACTION ON UPDATE CASCADE;
 
--- VIEWS
+-- VAATED
 
 CREATE VIEW Klasside_registreeringud AS
 SELECT
@@ -277,7 +281,7 @@ CREATE VIEW Klasside_opilaste_arv AS
 	k.nimetus;
 
 
--- SAMPLE DATA
+-- TESTANDMED
 
 INSERT INTO Amet (amet_kood, nimetus) VALUES (1345, 'koolidirektor');
 INSERT INTO Amet (amet_kood, nimetus) VALUES (2341, 'õpetaja');
@@ -393,9 +397,12 @@ INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VA
 INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '50305155150', '2018-03-16');
 INSERT INTO Registreering (soogikorra_ID, isikukood, registreerimise_kuupaev) VALUES (1, '60306166160', '2018-03-16');
 
+-- FUNKTSIOONID JA TRIGGERID
+
+CREATE EXTENSION pgcrypto;
 UPDATE Tootaja SET parool = public.crypt(parool,public.gen_salt('bf', 11));
 
-CREATE OR REPLACE FUNCTION f_on_majandusala_juhataja(text, text)
+CREATE OR REPLACE FUNCTION f_on_majandusalajuhataja(text, text)
 RETURNS boolean AS $$
 DECLARE rslt boolean;
 BEGIN
@@ -406,7 +413,7 @@ RETURN coalesce(rslt, FALSE);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE
 SET search_path = public, pg_temp;
-COMMENT ON FUNCTION f_on_majandusala_juhataja(text, text) IS
+COMMENT ON FUNCTION f_on_majandusalajuhataja(text, text) IS
 'Selle funktsiooni abil autenditakse majandusalajuhataja. Funktsiooni väljakutsel on esimene argument e-post ja teine
 argument parool. Majandusalajuhatajal on õigus süsteemi siseneda, vaid siis kui tema seisund on aktiivne';
 
@@ -432,7 +439,7 @@ BEGIN
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION f_tyhista_soogikorra_muudatus() IS
+COMMENT ON FUNCTION f_tyhista_soogikorra_muudatus_parast_avamist() IS
 'Söögikorra andmeid ei saa muuta pärast registreerimise avamist';
 
 CREATE TRIGGER trig_tyhista_soogikorra_muudatus_parast_avamist BEFORE UPDATE OF
@@ -441,7 +448,7 @@ ON soogikord
 FOR EACH ROW WHEN (old.soogikorra_seisundi_liik_kood > 2)
 EXECUTE PROCEDURE f_tyhista_soogikorra_muudatus_parast_avamist();
 
-CREATE OR REPLACE FUNCTION f_tyhista_arhiveeritud_soogikorra_muudatus(); RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION f_tyhista_arhiveeritud_soogikorra_muudatus() RETURNS trigger AS $$
 BEGIN
     RAISE EXCEPTION 'Arhiveeritud söögikorda ei saa muuta';
     RETURN NULL;
